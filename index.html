@@ -497,6 +497,55 @@
         color: #3d2fa8;
       }
 
+      .winner-actions {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .winner-actions button {
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #6a4bff, #9d7bff);
+        color: #fff;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .winner-actions button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(106, 75, 255, 0.25);
+      }
+
+      .winner-results {
+        margin-top: 14px;
+        border: 1px solid #e2dcff;
+        border-radius: 10px;
+        background: #fff;
+        padding: 12px 16px;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .winner-results.hidden {
+        display: none;
+      }
+
+      .winner-results ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #4c3fa5;
+      }
+
+      .winner-results li {
+        margin-bottom: 6px;
+      }
+
       @media (min-width: 720px) {
         .card-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -941,6 +990,14 @@
           </thead>
           <tbody id="globalStatsTableBody"></tbody>
         </table>
+        <div class="winner-actions">
+          <button id="showFirstWinnersButton" type="button">1등 당첨자 보기</button>
+          <button id="showSecondWinnersButton" type="button">2등 당첨자 보기</button>
+        </div>
+        <div id="winnerResults" class="winner-results hidden">
+          <p id="winnerResultsHint" class="hint">버튼을 눌러 당첨자 목록을 확인하세요.</p>
+          <ul id="winnerResultsList"></ul>
+        </div>
       </section>
       <section id="adminSection" class="admin-section hidden">
         <h2>관리자 도구</h2>
@@ -1147,6 +1204,7 @@
       const USERS_COLLECTION = "users";
       const TRANSACTIONS_SUBCOLLECTION = "transactions";
       const GLOBAL_STATS_PATH = "stats/globalRankCounts";
+      const RANK_WINNERS_PATH = "stats/rankWinners";
       const PRESENCE_COLLECTION = "presence";
       const CHAT_MESSAGES_COLLECTION = "chat/messages";
       const CHAT_MESSAGE_LIMIT = 50;
@@ -1177,6 +1235,11 @@
       const globalStatsTable = document.getElementById('globalStatsTable');
       const globalStatsTableBody = document.getElementById('globalStatsTableBody');
       const globalStatsHint = document.getElementById('globalStatsHint');
+      const showFirstWinnersButton = document.getElementById('showFirstWinnersButton');
+      const showSecondWinnersButton = document.getElementById('showSecondWinnersButton');
+      const winnerResults = document.getElementById('winnerResults');
+      const winnerResultsHint = document.getElementById('winnerResultsHint');
+      const winnerResultsList = document.getElementById('winnerResultsList');
       const signUpEmailInput = document.getElementById('signUpEmail');
       const signUpPasswordInput = document.getElementById('signUpPassword');
       const signInEmailInput = document.getElementById('signInEmail');
@@ -1668,18 +1731,26 @@
 
       const updateGlobalRankStats = async (tickets) => {
         const increments = {};
+        const winnerIncrements = {};
         tickets.forEach((ticket) => {
           if (!ticket.rank || ticket.rank > 5) {
             return;
           }
           increments[ticket.rank] = (increments[ticket.rank] || 0) + 1;
+          if (currentUser && ticket.rank <= 2) {
+            if (!winnerIncrements[ticket.rank]) {
+              winnerIncrements[ticket.rank] = {};
+            }
+            winnerIncrements[ticket.rank][currentUser.uid] = (winnerIncrements[ticket.rank][currentUser.uid] || 0) + 1;
+          }
         });
         if (!Object.keys(increments).length) {
           return;
         }
         const statsRef = ref(db, GLOBAL_STATS_PATH);
-        try {
-          await runTransaction(statsRef, (data) => {
+        const tasks = [];
+        tasks.push(
+          runTransaction(statsRef, (data) => {
             const current = data && typeof data === 'object' ? data : {};
             const next = { ...current };
             Object.entries(increments).forEach(([rank, count]) => {
@@ -1688,7 +1759,29 @@
             });
             next.updatedAt = serverTimestamp();
             return next;
+          })
+        );
+        if (currentUser) {
+          Object.entries(winnerIncrements).forEach(([rank, users]) => {
+            Object.entries(users).forEach(([userId, count]) => {
+              const winnerRef = ref(db, `${RANK_WINNERS_PATH}/${rank}/${userId}`);
+              tasks.push(
+                runTransaction(winnerRef, (data) => {
+                  const current = data && typeof data === 'object' ? data : {};
+                  const currentCount = Number(current.count) || 0;
+                  return {
+                    userId,
+                    email: current.email || currentUser.email || '',
+                    count: currentCount + count,
+                    updatedAt: serverTimestamp(),
+                  };
+                })
+              );
+            });
           });
+        }
+        try {
+          await Promise.all(tasks);
         } catch (error) {
           console.error('Failed to update global rank stats', error);
         }
@@ -1726,6 +1819,67 @@
         }
       };
 
+      const renderWinnerResults = (rank, winners) => {
+        if (!winnerResults || !winnerResultsList || !winnerResultsHint) {
+          return;
+        }
+        winnerResults.classList.remove('hidden');
+        winnerResultsList.innerHTML = '';
+        const label = prizeLabels[rank] || `${rank}등`;
+        if (!winners.length) {
+          winnerResultsHint.textContent = `${label} 당첨자를 찾을 수 없습니다.`;
+          return;
+        }
+        winnerResultsHint.textContent = `${label} 당첨자 목록:`;
+        winners.forEach((winner) => {
+          const item = document.createElement('li');
+          const email = winner.email || '(이메일 없음)';
+          const count = Number(winner.count || 0);
+          item.textContent = `${email} · ${count.toLocaleString()}회`;
+          winnerResultsList.appendChild(item);
+        });
+      };
+
+      const fetchRankWinners = async (rank) => {
+        try {
+          const snapshot = await get(ref(db, `${RANK_WINNERS_PATH}/${rank}`));
+          if (!snapshot.exists()) {
+            renderWinnerResults(rank, []);
+            return;
+          }
+          const data = snapshot.val() || {};
+          const winners = Object.entries(data)
+            .map(([userId, entry]) => ({
+              userId,
+              email: entry?.email || '(이메일 없음)',
+              count: Number(entry?.count || 0),
+            }))
+            .sort((a, b) => b.count - a.count);
+          renderWinnerResults(rank, winners);
+        } catch (error) {
+          console.error('Failed to fetch rank winners', error);
+          if (winnerResultsHint) {
+            winnerResultsHint.textContent = '당첨자 목록을 불러오지 못했습니다.';
+          }
+          if (winnerResults) {
+            winnerResults.classList.remove('hidden');
+          }
+        }
+      };
+
+      const handleRankWinnersClick = async (rank) => {
+        if (winnerResults) {
+          winnerResults.classList.remove('hidden');
+        }
+        if (winnerResultsList) {
+          winnerResultsList.innerHTML = '';
+        }
+        if (winnerResultsHint) {
+          winnerResultsHint.textContent = '당첨자 목록을 불러오는 중입니다...';
+        }
+        await fetchRankWinners(rank);
+      };
+
       const startGlobalStatsListener = () => {
         const statsRef = ref(db, GLOBAL_STATS_PATH);
         onValue(
@@ -1740,6 +1894,13 @@
                 globalStatsHint.classList.remove('hidden');
               }
               globalStatsTableBody.innerHTML = '';
+              if (winnerResults) {
+                winnerResults.classList.add('hidden');
+                winnerResultsList.innerHTML = '';
+                if (winnerResultsHint) {
+                  winnerResultsHint.textContent = '버튼을 눌러 당첨자 목록을 확인하세요.';
+                }
+              }
               return;
             }
             const data = snapshot.val() || {};
@@ -2923,6 +3084,18 @@
           void draw(games);
         });
       });
+
+      if (showFirstWinnersButton) {
+        showFirstWinnersButton.addEventListener('click', () => {
+          void handleRankWinnersClick(1);
+        });
+      }
+
+      if (showSecondWinnersButton) {
+        showSecondWinnersButton.addEventListener('click', () => {
+          void handleRankWinnersClick(2);
+        });
+      }
       autoFirstButton.addEventListener('click', () => startAutoDraw(1));
       autoSecondButton.addEventListener('click', () => startAutoDraw(2));
       autoStopButton.addEventListener('click', () => stopAutoDraw('자동 추첨이 중지되었습니다.'));
