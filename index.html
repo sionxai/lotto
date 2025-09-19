@@ -1457,6 +1457,19 @@
         }
       };
 
+      const sendChatSystemMessage = async (text) => {
+        try {
+          await push(ref(db, CHAT_MESSAGES_COLLECTION), {
+            text,
+            system: true,
+            createdAt: serverTimestamp(),
+            createdAtMs: Date.now(),
+          });
+        } catch (error) {
+          console.error('Failed to send system chat message', error);
+        }
+      };
+
       const clearChatMessages = () => {
         chatMessagesCache = [];
         chatMessageKeys = new Set();
@@ -1578,6 +1591,24 @@
         }
       };
 
+      const announceWinningTickets = async (tickets) => {
+        if (!currentUser) {
+          return;
+        }
+        const winners = tickets.filter((ticket) => ticket.rank && ticket.rank <= 3);
+        if (!winners.length) {
+          return;
+        }
+        const displayName = currentUser.email || '사용자';
+        for (const ticket of winners) {
+          const label = rankAnnouncementLabels[ticket.rank];
+          if (!label) {
+            continue;
+          }
+          await sendChatSystemMessage(`${displayName}이 ${label}에 당첨되었습니다!`);
+        }
+      };
+
       const autoDrawState = {
         running: false,
         targetRank: null,
@@ -1597,6 +1628,12 @@
         3: '3등',
         4: '4등',
         5: '5등',
+      };
+
+      const rankAnnouncementLabels = {
+        1: '1등',
+        2: '2등',
+        3: '3등',
       };
 
       const combination = (n, k) => {
@@ -2378,6 +2415,7 @@
           }
 
           applyTicketsToState(tickets, { renderResults: false });
+          await announceWinningTickets(tickets);
 
           if (!autoDrawState.running) {
             return;
@@ -2455,6 +2493,7 @@
           }
           setHint(authMessage, '');
           applyTicketsToState(tickets, { renderResults: true });
+          await announceWinningTickets(tickets);
         });
       };
 
