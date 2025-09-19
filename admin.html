@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>관리자 승인 페이지</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px 16px 110px;
+        font-family: 'Noto Sans KR', Arial, Helvetica, sans-serif;
+        background: #f5f7ff;
+        color: #2b2853;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(52, 40, 120, 0.12);
+        padding: 36px;
+        display: grid;
+        gap: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+
+      h2 {
+        margin: 0 0 16px;
+        font-size: 22px;
+      }
+
+      .card {
+        border: 1px solid #d9d2ff;
+        border-radius: 12px;
+        padding: 24px;
+        background: #fbf9ff;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 780px) {
+        .form-grid.two-column {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      label {
+        font-size: 13px;
+        color: #5845a7;
+      }
+
+      input[type='email'],
+      input[type='password'] {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #cfc4ff;
+        font-size: 15px;
+      }
+
+      button {
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #5540d7, #856dff);
+        color: #fff;
+        font-weight: 600;
+        padding: 10px 16px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(85, 64, 215, 0.25);
+      }
+
+      button:disabled {
+        background: #c9c2f3;
+        cursor: not-allowed;
+      }
+
+      .secondary-button {
+        background: #fff;
+        color: #5540d7;
+        border: 1px solid #cec7ff;
+      }
+
+      .hint {
+        font-size: 13px;
+        color: #7a6bbb;
+        margin: 12px 0 0;
+      }
+
+      .hint.error {
+        color: #c0392b;
+      }
+
+      .hint.success {
+        color: #1b8b62;
+      }
+
+      .requests-grid {
+        display: grid;
+        gap: 20px;
+      }
+
+      @media (min-width: 880px) {
+        .requests-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .request-card {
+        border: 1px solid #ede8ff;
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .request-amount {
+        font-size: 18px;
+        font-weight: 700;
+        color: #4a37c7;
+      }
+
+      .request-meta {
+        font-size: 12px;
+        color: #7f74b0;
+      }
+
+      .request-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #efeaff;
+        text-align: left;
+      }
+
+      th {
+        background: #f4f1ff;
+        color: #4b3fad;
+      }
+
+      .status-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+
+      .status-tag.pending {
+        background: #fff4ce;
+        color: #946200;
+      }
+
+      .status-tag.processing {
+        background: #dfe9ff;
+        color: #2560b1;
+      }
+
+      .status-tag.approved {
+        background: #d2f6e5;
+        color: #137a57;
+      }
+
+      .status-tag.rejected {
+        background: #ffdede;
+        color: #b03a3a;
+      }
+
+      .status-tag.error {
+        background: #ffe0cc;
+        color: #b55614;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(6px);
+        border-top: 1px solid #d9d2ff;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999;
+        padding: 0 16px;
+        gap: 16px;
+      }
+
+      .bottom-nav a {
+        text-decoration: none;
+        font-size: 13px;
+        color: #5540d7;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+      }
+
+      .bottom-nav a:hover {
+        color: #3e2bbb;
+      }
+
+      .bottom-nav-icon {
+        font-size: 18px;
+      }
+
+      .bottom-nav a.active {
+        color: #3422a8;
+      }
+
+      @media (min-width: 960px) {
+        .bottom-nav {
+          height: 72px;
+          justify-content: center;
+          gap: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>관리자 충전 승인</h1>
+        <p class="hint">사용자가 요청한 금액 충전 요청을 검토하고 승인/거절할 수 있습니다.</p>
+      </header>
+
+      <section class="card">
+        <h2>로그인 / 회원가입</h2>
+        <div class="form-grid two-column">
+          <form id="signUpForm" class="form-field">
+            <label for="signUpEmail">이메일</label>
+            <input id="signUpEmail" type="email" required autocomplete="email" />
+            <label for="signUpPassword">비밀번호</label>
+            <input id="signUpPassword" type="password" required minlength="6" autocomplete="new-password" />
+            <button type="submit">회원가입</button>
+            <p class="hint">관리자 계정은 별도로 권한을 부여해야 합니다.</p>
+          </form>
+          <form id="signInForm" class="form-field">
+            <label for="signInEmail">이메일</label>
+            <input id="signInEmail" type="email" required autocomplete="email" />
+            <label for="signInPassword">비밀번호</label>
+            <input id="signInPassword" type="password" required autocomplete="current-password" />
+            <button type="submit">로그인</button>
+          </form>
+        </div>
+        <p id="authMessage" class="hint"></p>
+      </section>
+
+      <section id="adminPanel" class="card hidden">
+        <div class="form-grid">
+          <div>
+            <h2>관리자 정보</h2>
+            <p class="hint"><strong id="adminEmail">-</strong></p>
+            <button id="signOutButton" class="secondary-button">로그아웃</button>
+          </div>
+          <div>
+            <h2>요청 상태</h2>
+            <p class="hint">대기 중: <strong id="pendingCount">0</strong>건</p>
+            <p class="hint">오늘 승인: <strong id="approvedTodayCount">0</strong>건</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="pendingSection" class="card hidden">
+        <h2>대기 중인 요청</h2>
+        <div id="pendingList" class="requests-grid"></div>
+        <p id="pendingEmptyMessage" class="hint">대기 중인 요청이 없습니다.</p>
+      </section>
+
+      <section id="historySection" class="card hidden">
+        <h2>최근 처리 내역</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>요청 시간</th>
+              <th>사용자</th>
+              <th>금액</th>
+              <th>상태</th>
+              <th>처리 시간</th>
+              <th>처리자</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </section>
+    <nav class="bottom-nav">
+      <a href="lotto.html" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">🎰</span>
+        <span>추첨</span>
+      </a>
+      <a href="purchase.html" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">💰</span>
+        <span>충전</span>
+      </a>
+      <a href="admin.html" class="active">
+        <span class="bottom-nav-icon">🛠</span>
+        <span>관리자</span>
+      </a>
+    </nav>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        get,
+        set,
+        update,
+        push,
+        runTransaction,
+        query,
+        orderByChild,
+        equalTo,
+        limitToLast,
+        onValue,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB7wCVlUoU-Qqx70jDIfrK4Xq7N4FgqnoE",
+        authDomain: "lotto-e8ede.firebaseapp.com",
+        projectId: "lotto-e8ede",
+        storageBucket: "lotto-e8ede.firebasestorage.app",
+        messagingSenderId: "869009808834",
+        appId: "1:869009808834:web:92053afac20e104015ca5b",
+        measurementId: "G-2RD2YDR50Q",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getDatabase(app, "https://lotto-e8ede-default-rtdb.asia-southeast1.firebasedatabase.app/");
+
+      const USERS_COLLECTION = "users";
+      const REQUESTS_COLLECTION = "purchaseRequests";
+      const TRANSACTIONS_SUBCOLLECTION = "transactions";
+      const INITIAL_BALANCE = 100_000_000;
+      const ADMIN_EMAILS = ["admin@admin.com"];
+
+      const signUpForm = document.getElementById('signUpForm');
+      const signInForm = document.getElementById('signInForm');
+      const signUpEmailInput = document.getElementById('signUpEmail');
+      const signUpPasswordInput = document.getElementById('signUpPassword');
+      const signInEmailInput = document.getElementById('signInEmail');
+      const signInPasswordInput = document.getElementById('signInPassword');
+      const authMessage = document.getElementById('authMessage');
+
+      const adminPanel = document.getElementById('adminPanel');
+      const adminEmailText = document.getElementById('adminEmail');
+      const pendingSection = document.getElementById('pendingSection');
+      const pendingList = document.getElementById('pendingList');
+      const pendingEmptyMessage = document.getElementById('pendingEmptyMessage');
+      const historySection = document.getElementById('historySection');
+      const historyTableBody = document.getElementById('historyTableBody');
+      const pendingCountText = document.getElementById('pendingCount');
+      const approvedTodayCountText = document.getElementById('approvedTodayCount');
+      const signOutButton = document.getElementById('signOutButton');
+
+      let currentUser = null;
+      let currentUserData = null;
+      let unsubscribePending = null;
+      let unsubscribeHistory = null;
+
+      const formatCurrency = (amount) => `${Number(amount || 0).toLocaleString()}원`;
+
+      const setHint = (element, message = '', type = 'info') => {
+        if (!element) return;
+        element.textContent = message || '';
+        element.classList.remove('error', 'success');
+        if (!message) return;
+        if (type === 'error') {
+          element.classList.add('error');
+        } else if (type === 'success') {
+          element.classList.add('success');
+        }
+      };
+
+      const normalizeEmail = (value) => (value || '').trim().toLowerCase();
+
+      const ensureUserDocument = async (user) => {
+        if (!user) return;
+        const emailLower = normalizeEmail(user.email || '');
+        const isAdmin = ADMIN_EMAILS.includes(emailLower);
+        const userRef = ref(db, `${USERS_COLLECTION}/${user.uid}`);
+        const snapshot = await get(userRef);
+        if (!snapshot.exists()) {
+          const timestamp = serverTimestamp();
+          await set(userRef, {
+            email: user.email || '',
+            emailLower,
+            balance: INITIAL_BALANCE,
+            totalSpent: 0,
+            totalWon: 0,
+            isAdmin,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          });
+        } else {
+          const data = snapshot.val() || {};
+          const updates = {};
+          if (!data.email && user.email) updates.email = user.email;
+          if (!data.emailLower && emailLower) updates.emailLower = emailLower;
+          if (isAdmin && !data.isAdmin) updates.isAdmin = true;
+          if (Object.keys(updates).length) {
+            updates.updatedAt = serverTimestamp();
+            await update(userRef, updates);
+          }
+        }
+      };
+
+      const renderPendingRequests = (requests) => {
+        pendingList.innerHTML = '';
+        if (!requests.length) {
+          pendingEmptyMessage.classList.remove('hidden');
+          return;
+        }
+        pendingEmptyMessage.classList.add('hidden');
+        requests
+          .slice()
+          .sort((a, b) => (a.createdAtMs || 0) - (b.createdAtMs || 0))
+          .forEach((request) => {
+            const card = document.createElement('div');
+            card.className = 'request-card';
+
+            const header = document.createElement('div');
+            header.className = 'request-header';
+
+            const amount = document.createElement('div');
+            amount.className = 'request-amount';
+            amount.textContent = formatCurrency(request.amount);
+            header.appendChild(amount);
+
+            const status = document.createElement('span');
+            status.className = 'status-tag pending';
+            status.textContent = request.status || 'pending';
+            header.appendChild(status);
+            card.appendChild(header);
+
+            const email = document.createElement('p');
+            email.className = 'request-meta';
+            email.textContent = `요청자: ${request.email || '(알 수 없음)'}`;
+            card.appendChild(email);
+
+            const created = document.createElement('p');
+            created.className = 'request-meta';
+            const createdDate = request.createdAtMs ? new Date(request.createdAtMs) : null;
+            created.textContent = `요청 시간: ${createdDate ? createdDate.toLocaleString('ko-KR') : '-'}`;
+            card.appendChild(created);
+
+            const actions = document.createElement('div');
+            actions.className = 'request-actions';
+
+            const approveButton = document.createElement('button');
+            approveButton.textContent = '승인';
+            approveButton.addEventListener('click', () => {
+              void handleApprove(request.id, request);
+            });
+
+            const rejectButton = document.createElement('button');
+            rejectButton.textContent = '거절';
+            rejectButton.className = 'secondary-button';
+            rejectButton.addEventListener('click', () => {
+              void handleReject(request.id, request);
+            });
+
+            actions.appendChild(approveButton);
+            actions.appendChild(rejectButton);
+            card.appendChild(actions);
+
+            pendingList.appendChild(card);
+          });
+      };
+
+      const renderHistory = (requests) => {
+        historyTableBody.innerHTML = '';
+        if (!requests.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 6;
+          cell.textContent = '최근 내역이 없습니다.';
+          row.appendChild(cell);
+          historyTableBody.appendChild(row);
+          return;
+        }
+
+        requests
+          .slice()
+          .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0))
+          .forEach((request) => {
+            const row = document.createElement('tr');
+
+            const createdCell = document.createElement('td');
+            const createdDate = request.createdAtMs ? new Date(request.createdAtMs) : null;
+            createdCell.textContent = createdDate ? createdDate.toLocaleString('ko-KR') : '-';
+            row.appendChild(createdCell);
+
+            const emailCell = document.createElement('td');
+            emailCell.textContent = request.email || '-';
+            row.appendChild(emailCell);
+
+            const amountCell = document.createElement('td');
+            amountCell.textContent = formatCurrency(request.amount);
+            row.appendChild(amountCell);
+
+            const statusCell = document.createElement('td');
+            const tag = document.createElement('span');
+            tag.className = `status-tag ${request.status || 'pending'}`;
+            tag.textContent = request.status || 'pending';
+            statusCell.appendChild(tag);
+            row.appendChild(statusCell);
+
+            const processedCell = document.createElement('td');
+            const processedDate = request.processedAtMs ? new Date(request.processedAtMs) : null;
+            processedCell.textContent = processedDate ? processedDate.toLocaleString('ko-KR') : '-';
+            row.appendChild(processedCell);
+
+            const adminCell = document.createElement('td');
+            adminCell.textContent = request.processedByEmail || '-';
+            row.appendChild(adminCell);
+
+            historyTableBody.appendChild(row);
+          });
+      };
+
+      const startPendingListener = () => {
+        stopPendingListener();
+        const q = query(
+          ref(db, REQUESTS_COLLECTION),
+          orderByChild('status'),
+          equalTo('pending')
+        );
+        unsubscribePending = onValue(q, (snapshot) => {
+          const value = snapshot.val() || {};
+          const items = Object.entries(value).map(([id, data]) => ({ id, ...data }));
+          pendingCountText.textContent = items.length;
+          renderPendingRequests(items);
+          pendingSection.classList.remove('hidden');
+        });
+      };
+
+      const stopPendingListener = () => {
+        if (unsubscribePending) {
+          unsubscribePending();
+          unsubscribePending = null;
+        }
+        pendingSection.classList.add('hidden');
+        pendingList.innerHTML = '';
+        pendingEmptyMessage.classList.add('hidden');
+        pendingCountText.textContent = '0';
+      };
+
+      const startHistoryListener = () => {
+        stopHistoryListener();
+        const q = query(
+          ref(db, REQUESTS_COLLECTION),
+          orderByChild('createdAt'),
+          limitToLast(100)
+        );
+        unsubscribeHistory = onValue(q, (snapshot) => {
+          const value = snapshot.val() || {};
+          const items = Object.entries(value).map(([id, data]) => ({ id, ...data }));
+          const today = new Date();
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+          const approvedToday = items.filter((item) => item.status === 'approved' && (item.processedAtMs || 0) >= todayStart);
+          approvedTodayCountText.textContent = approvedToday.length;
+          historySection.classList.remove('hidden');
+          renderHistory(items.filter((item) => item.status && item.status !== 'pending'));
+        });
+      };
+
+      const stopHistoryListener = () => {
+        if (unsubscribeHistory) {
+          unsubscribeHistory();
+          unsubscribeHistory = null;
+        }
+        historySection.classList.add('hidden');
+        historyTableBody.innerHTML = '';
+        approvedTodayCountText.textContent = '0';
+      };
+
+      const claimRequest = async (requestId, expectedStatus = 'pending') => {
+        const requestRef = ref(db, `${REQUESTS_COLLECTION}/${requestId}`);
+        const result = await runTransaction(requestRef, (data) => {
+          if (!data) return data;
+          if (data.status !== expectedStatus) {
+            return data;
+          }
+          return {
+            ...data,
+            status: 'processing',
+            processingBy: currentUser?.uid || '',
+            processingByEmail: currentUser?.email || '',
+            processingAt: serverTimestamp(),
+            processingAtMs: Date.now(),
+          };
+        });
+        if (!result.committed) {
+          return null;
+        }
+        const claimed = result.snapshot.val();
+        if (!claimed || claimed.status !== 'processing' || claimed.processingBy !== (currentUser?.uid || '')) {
+          return null;
+        }
+        return claimed;
+      };
+
+      const finalizeRequestStatus = async (requestId, updates) => {
+        const requestRef = ref(db, `${REQUESTS_COLLECTION}/${requestId}`);
+        await update(requestRef, updates);
+      };
+
+      const handleApprove = async (requestId, originalRequest) => {
+        if (!currentUser || !currentUserIsAdmin()) {
+          setHint(authMessage, '관리자만 승인할 수 있습니다.', 'error');
+          return;
+        }
+        try {
+          const claimed = await claimRequest(requestId, 'pending');
+          if (!claimed) {
+            setHint(authMessage, '이미 처리 중이거나 다른 관리자가 처리했습니다.', 'error');
+            return;
+          }
+
+          const amount = Number(claimed.amount || 0);
+          if (!Number.isFinite(amount) || amount <= 0) {
+            await finalizeRequestStatus(requestId, {
+              status: 'error',
+              errorMessage: '요청 금액이 올바르지 않습니다.',
+              processedAt: serverTimestamp(),
+              processedAtMs: Date.now(),
+              processedBy: currentUser.uid,
+              processedByEmail: currentUser.email || '',
+            });
+            return;
+          }
+
+          const userRef = ref(db, `${USERS_COLLECTION}/${claimed.userId}`);
+          const userResult = await runTransaction(userRef, (data) => {
+            if (data === null) {
+              return data;
+            }
+            const balance = typeof data.balance === 'number' ? data.balance : Number(data.balance) || 0;
+            return {
+              ...data,
+              balance: balance + amount,
+              updatedAt: serverTimestamp(),
+            };
+          });
+
+          if (!userResult.committed || !userResult.snapshot.exists()) {
+            await finalizeRequestStatus(requestId, {
+              status: 'error',
+              errorMessage: '사용자 정보를 찾을 수 없습니다.',
+              processedAt: serverTimestamp(),
+              processedAtMs: Date.now(),
+              processedBy: currentUser.uid,
+              processedByEmail: currentUser.email || '',
+            });
+            return;
+          }
+
+          try {
+            await push(ref(db, `${USERS_COLLECTION}/${claimed.userId}/${TRANSACTIONS_SUBCOLLECTION}`), {
+              type: 'purchase_grant',
+              amount,
+              createdAt: serverTimestamp(),
+              createdAtMs: Date.now(),
+              grantedBy: currentUser.uid,
+              grantedByEmail: currentUser.email || '',
+              requestId,
+            });
+          } catch (error) {
+            console.error('Failed to record transaction', error);
+          }
+
+          await finalizeRequestStatus(requestId, {
+            status: 'approved',
+            processedAt: serverTimestamp(),
+            processedAtMs: Date.now(),
+            processedBy: currentUser.uid,
+            processedByEmail: currentUser.email || '',
+          });
+          setHint(authMessage, '요청을 승인했습니다.', 'success');
+        } catch (error) {
+          console.error(error);
+          setHint(authMessage, '승인 처리 중 오류가 발생했습니다.', 'error');
+          await finalizeRequestStatus(requestId, {
+            status: 'error',
+            errorMessage: '승인 처리 중 오류 발생',
+            processedAt: serverTimestamp(),
+            processedAtMs: Date.now(),
+            processedBy: currentUser?.uid || '',
+            processedByEmail: currentUser?.email || '',
+          });
+        }
+      };
+
+      const handleReject = async (requestId, originalRequest) => {
+        if (!currentUser || !currentUserIsAdmin()) {
+          setHint(authMessage, '관리자만 거절할 수 있습니다.', 'error');
+          return;
+        }
+        try {
+          const claimed = await claimRequest(requestId, 'pending');
+          if (!claimed) {
+            setHint(authMessage, '이미 처리 중이거나 다른 관리자가 처리했습니다.', 'error');
+            return;
+          }
+
+          await finalizeRequestStatus(requestId, {
+            status: 'rejected',
+            processedAt: serverTimestamp(),
+            processedAtMs: Date.now(),
+            processedBy: currentUser.uid,
+            processedByEmail: currentUser.email || '',
+          });
+          setHint(authMessage, '요청을 거절했습니다.', 'success');
+        } catch (error) {
+          console.error(error);
+          setHint(authMessage, '거절 처리 중 오류가 발생했습니다.', 'error');
+          await finalizeRequestStatus(requestId, {
+            status: 'error',
+            errorMessage: '거절 처리 중 오류 발생',
+            processedAt: serverTimestamp(),
+            processedAtMs: Date.now(),
+            processedBy: currentUser?.uid || '',
+            processedByEmail: currentUser?.email || '',
+          });
+        }
+      };
+
+      const currentUserIsAdmin = () => {
+        if (!currentUser) return false;
+        const emailLower = normalizeEmail(currentUser.email || '');
+        return ADMIN_EMAILS.includes(emailLower) || Boolean(currentUserData?.isAdmin);
+      };
+
+      if (signUpForm) {
+        signUpForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signUpEmailInput?.value || '').trim();
+          const password = (signUpPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '회원가입 완료! 자동 로그인됩니다.', 'success');
+            signUpForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '회원가입 중 오류가 발생했습니다.', 'error');
+          }
+        });
+      }
+
+      if (signInForm) {
+        signInForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signInEmailInput?.value || '').trim();
+          const password = (signInPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '로그인 성공!', 'success');
+            signInForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '로그인에 실패했습니다. 정보를 확인해주세요.', 'error');
+          }
+        });
+      }
+
+      if (signOutButton) {
+        signOutButton.addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            setHint(authMessage, '로그아웃 되었습니다.', 'success');
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '로그아웃 중 오류가 발생했습니다.', 'error');
+          }
+        });
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user || null;
+        currentUserData = null;
+        stopPendingListener();
+        stopHistoryListener();
+
+        if (!currentUser) {
+          adminPanel.classList.add('hidden');
+          adminEmailText.textContent = '-';
+          setHint(authMessage, '관리자 계정으로 로그인해주세요.', '');
+          return;
+        }
+
+        await ensureUserDocument(currentUser);
+        const snapshot = await get(ref(db, `${USERS_COLLECTION}/${currentUser.uid}`));
+        currentUserData = snapshot.val() || {};
+        adminEmailText.textContent = currentUser.email || '-';
+
+        if (!currentUserIsAdmin()) {
+          setHint(authMessage, '관리자 권한이 없습니다.', 'error');
+          adminPanel.classList.add('hidden');
+          return;
+        }
+
+        setHint(authMessage, '관리자 로그인 완료.', 'success');
+        adminPanel.classList.remove('hidden');
+        startPendingListener();
+        startHistoryListener();
+      });
+    </script>
+  </body>
+</html>

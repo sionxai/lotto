@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>금액 구매 요청</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px 16px 110px;
+        font-family: 'Noto Sans KR', Arial, Helvetica, sans-serif;
+        background: #f7f6fb;
+        color: #333;
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(31, 20, 60, 0.1);
+        padding: 32px;
+        display: grid;
+        gap: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        color: #2c2256;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        color: #2c2256;
+      }
+
+      .card {
+        border: 1px solid #ebe5ff;
+        border-radius: 12px;
+        padding: 24px;
+        background: #faf8ff;
+      }
+
+      .card + .card {
+        margin-top: 12px;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 720px) {
+        .form-grid.two-column {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      label {
+        font-size: 13px;
+        color: #6754aa;
+      }
+
+      input[type='email'],
+      input[type='password'],
+      input[type='number'] {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #d0c7ff;
+        font-size: 15px;
+      }
+
+      input:disabled {
+        background: #f2f0ff;
+      }
+
+      button {
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #6a4bff, #9d7bff);
+        color: #fff;
+        font-weight: 600;
+        padding: 10px 16px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(106, 75, 255, 0.2);
+      }
+
+      button:disabled {
+        background: #ccc3f0;
+        cursor: not-allowed;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .secondary-button {
+        background: #fff;
+        color: #6a4bff;
+        border: 1px solid #d9d0ff;
+      }
+
+      .helper-text {
+        font-size: 12px;
+        color: #7a6aaa;
+      }
+
+      .hint {
+        font-size: 13px;
+        margin: 12px 0 0;
+        color: #7a6aaa;
+      }
+
+      .hint.error {
+        color: #c0392b;
+      }
+
+      .hint.success {
+        color: #1e8c68;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #ebe5ff;
+        text-align: left;
+      }
+
+      th {
+        background: #f3efff;
+        color: #4f3d94;
+      }
+
+      .status-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+
+      .status-tag.pending {
+        background: #fff3cd;
+        color: #946200;
+      }
+
+      .status-tag.approved {
+        background: #d1f7e5;
+        color: #0f8f60;
+      }
+
+      .status-tag.rejected {
+        background: #ffe0dd;
+        color: #b43a30;
+      }
+
+      .status-tag.processing {
+        background: #e1ecff;
+        color: #315fab;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(6px);
+        border-top: 1px solid #e1dcff;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999;
+        padding: 0 16px;
+        gap: 16px;
+      }
+
+      .bottom-nav button,
+      .bottom-nav a {
+        background: none;
+        border: none;
+        font-size: 13px;
+        color: #6a4bff;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        padding: 6px 10px;
+      }
+
+      .bottom-nav a.active {
+        color: #4b2dd4;
+      }
+
+      .bottom-nav button:hover,
+      .bottom-nav a:hover {
+        color: #5335cf;
+      }
+
+      .bottom-nav-icon {
+        font-size: 18px;
+      }
+
+      .bottom-nav button:disabled {
+        color: #aaa3d9;
+      }
+
+      @media (min-width: 960px) {
+        .bottom-nav {
+          height: 72px;
+          justify-content: center;
+          gap: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>금액 구매 요청</h1>
+        <p class="helper-text">원하는 금액을 선택하거나 입력하여 관리자에게 충전 승인을 요청하세요.</p>
+      </header>
+
+      <section class="card">
+        <h2>로그인 / 회원가입</h2>
+        <div class="form-grid two-column">
+          <form id="signUpForm" class="form-field">
+            <label for="signUpEmail">이메일</label>
+            <input id="signUpEmail" type="email" required autocomplete="email" />
+            <label for="signUpPassword">비밀번호</label>
+            <input id="signUpPassword" type="password" required minlength="6" autocomplete="new-password" />
+            <button type="submit">회원가입</button>
+            <p class="helper-text">가입 시 기본 잔액 1억이 제공됩니다.</p>
+          </form>
+          <form id="signInForm" class="form-field">
+            <label for="signInEmail">이메일</label>
+            <input id="signInEmail" type="email" required autocomplete="email" />
+            <label for="signInPassword">비밀번호</label>
+            <input id="signInPassword" type="password" required autocomplete="current-password" />
+            <button type="submit">로그인</button>
+          </form>
+        </div>
+        <p id="authMessage" class="hint"></p>
+      </section>
+
+      <section id="userPanel" class="card hidden">
+        <div class="form-grid">
+          <div>
+            <h2>내 정보</h2>
+            <p class="helper-text"><strong id="userEmail"></strong></p>
+            <p class="helper-text">보유 금액: <span id="userBalance">0원</span></p>
+            <button id="signOutButton" class="secondary-button">로그아웃</button>
+          </div>
+          <div>
+            <h2>금액 요청</h2>
+            <div class="button-row">
+              <button type="button" data-amount="100000000" class="quick-amount">1억 요청</button>
+              <button type="button" data-amount="1000000000" class="quick-amount">10억 요청</button>
+              <button type="button" data-amount="10000000000" class="quick-amount">100억 요청</button>
+            </div>
+            <form id="customAmountForm" class="form-field" style="margin-top: 12px;">
+              <label for="customAmountInput">기타 금액 (원)</label>
+              <input id="customAmountInput" type="number" min="1" step="1000" placeholder="금액을 입력하세요" />
+              <button type="submit">요청하기</button>
+            </form>
+            <p id="requestMessage" class="hint"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="requestsSection" class="card hidden">
+        <h2>나의 요청 내역</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>요청일</th>
+                <th>요청 금액</th>
+                <th>상태</th>
+                <th>처리 관리자</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    <nav class="bottom-nav">
+      <a href="lotto.html" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">🎰</span>
+        <span>추첨</span>
+      </a>
+      <a href="purchase.html" class="active">
+        <span class="bottom-nav-icon">💰</span>
+        <span>충전</span>
+      </a>
+      <a id="bottomNavAdminLink" href="admin.html" class="hidden" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">🛠</span>
+        <span>관리자</span>
+      </a>
+    </nav>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        get,
+        set,
+        push,
+        update,
+        query,
+        orderByChild,
+        equalTo,
+        onValue,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB7wCVlUoU-Qqx70jDIfrK4Xq7N4FgqnoE",
+        authDomain: "lotto-e8ede.firebaseapp.com",
+        projectId: "lotto-e8ede",
+        storageBucket: "lotto-e8ede.firebasestorage.app",
+        messagingSenderId: "869009808834",
+        appId: "1:869009808834:web:92053afac20e104015ca5b",
+        measurementId: "G-2RD2YDR50Q",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getDatabase(app, "https://lotto-e8ede-default-rtdb.asia-southeast1.firebasedatabase.app/");
+
+      const INITIAL_BALANCE = 100_000_000;
+      const USERS_COLLECTION = "users";
+      const REQUESTS_COLLECTION = "purchaseRequests";
+      const ADMIN_EMAILS = ["admin@admin.com"];
+
+      const signUpForm = document.getElementById('signUpForm');
+      const signInForm = document.getElementById('signInForm');
+      const signUpEmailInput = document.getElementById('signUpEmail');
+      const signUpPasswordInput = document.getElementById('signUpPassword');
+      const signInEmailInput = document.getElementById('signInEmail');
+      const signInPasswordInput = document.getElementById('signInPassword');
+      const authMessage = document.getElementById('authMessage');
+
+      const userPanel = document.getElementById('userPanel');
+      const userEmailText = document.getElementById('userEmail');
+      const userBalanceText = document.getElementById('userBalance');
+      const signOutButton = document.getElementById('signOutButton');
+      const bottomNavAdminLink = document.getElementById('bottomNavAdminLink');
+
+      const requestMessage = document.getElementById('requestMessage');
+      const quickAmountButtons = Array.from(document.querySelectorAll('.quick-amount'));
+      const customAmountForm = document.getElementById('customAmountForm');
+      const customAmountInput = document.getElementById('customAmountInput');
+
+      const requestsSection = document.getElementById('requestsSection');
+      const requestsTableBody = document.getElementById('requestsTableBody');
+
+      let currentUser = null;
+      let currentUserData = null;
+      let unsubscribeRequests = null;
+
+      const formatCurrency = (amount) => `${Number(amount || 0).toLocaleString()}원`;
+
+      const setHint = (element, message = '', type = 'info') => {
+        if (!element) return;
+        element.textContent = message || '';
+        element.classList.remove('error', 'success');
+        if (!message) return;
+        if (type === 'error') {
+          element.classList.add('error');
+        } else if (type === 'success') {
+          element.classList.add('success');
+        }
+      };
+
+      const normalizeEmail = (value) => (value || '').trim().toLowerCase();
+
+      const ensureUserDocument = async (user) => {
+        if (!user) return;
+        const emailLower = normalizeEmail(user.email || '');
+        const isAdmin = ADMIN_EMAILS.includes(emailLower);
+        const userRef = ref(db, `${USERS_COLLECTION}/${user.uid}`);
+        const snapshot = await get(userRef);
+        if (!snapshot.exists()) {
+          const timestamp = serverTimestamp();
+          await set(userRef, {
+            email: user.email || '',
+            emailLower,
+            balance: INITIAL_BALANCE,
+            totalSpent: 0,
+            totalWon: 0,
+            isAdmin,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          });
+        } else {
+          const data = snapshot.val() || {};
+          const updates = {};
+          if (!data.email && user.email) updates.email = user.email;
+          if (!data.emailLower && emailLower) updates.emailLower = emailLower;
+          if (isAdmin && !data.isAdmin) updates.isAdmin = true;
+          if (Object.keys(updates).length) {
+            updates.updatedAt = serverTimestamp();
+            await update(userRef, updates);
+          }
+        }
+      };
+
+      const renderUserPanel = (data) => {
+        if (!currentUser) {
+          userPanel.classList.add('hidden');
+          if (bottomNavAdminLink) {
+            bottomNavAdminLink.classList.add('hidden');
+          }
+          return;
+        }
+        userPanel.classList.remove('hidden');
+        userEmailText.textContent = currentUser.email || '(이메일 없음)';
+        userBalanceText.textContent = formatCurrency(data?.balance || INITIAL_BALANCE);
+        if (bottomNavAdminLink) {
+          bottomNavAdminLink.classList.toggle('hidden', !(data && data.isAdmin));
+        }
+      };
+
+      const renderRequests = (requests) => {
+        requestsTableBody.innerHTML = '';
+        if (!requests.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 4;
+          cell.textContent = '요청 내역이 없습니다.';
+          row.appendChild(cell);
+          requestsTableBody.appendChild(row);
+          return;
+        }
+        requests
+          .slice()
+          .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0))
+          .forEach((request) => {
+            const row = document.createElement('tr');
+
+            const createdCell = document.createElement('td');
+            const date = request.createdAtMs ? new Date(request.createdAtMs) : null;
+            createdCell.textContent = date ? date.toLocaleString('ko-KR') : '-';
+            row.appendChild(createdCell);
+
+            const amountCell = document.createElement('td');
+            amountCell.textContent = formatCurrency(request.amount);
+            row.appendChild(amountCell);
+
+            const statusCell = document.createElement('td');
+            const tag = document.createElement('span');
+            tag.className = `status-tag ${request.status || 'pending'}`;
+            tag.textContent = request.status || 'pending';
+            statusCell.appendChild(tag);
+            row.appendChild(statusCell);
+
+            const adminCell = document.createElement('td');
+            adminCell.textContent = request.processedByEmail || '-';
+            row.appendChild(adminCell);
+
+            requestsTableBody.appendChild(row);
+          });
+      };
+
+      const startRequestsListener = (user) => {
+        stopRequestsListener();
+        const q = query(
+          ref(db, REQUESTS_COLLECTION),
+          orderByChild('userId'),
+          equalTo(user.uid)
+        );
+        unsubscribeRequests = onValue(q, (snapshot) => {
+          const value = snapshot.val() || {};
+          const items = Object.entries(value).map(([id, data]) => ({
+            id,
+            ...data,
+          }));
+          renderRequests(items);
+          requestsSection.classList.remove('hidden');
+        });
+      };
+
+      const stopRequestsListener = () => {
+        if (unsubscribeRequests) {
+          unsubscribeRequests();
+          unsubscribeRequests = null;
+        }
+        requestsSection.classList.add('hidden');
+        requestsTableBody.innerHTML = '';
+      };
+
+      const submitRequest = async (amount) => {
+        if (!currentUser) return;
+        setHint(requestMessage, '요청을 전송하는 중입니다...', '');
+        try {
+          await push(ref(db, REQUESTS_COLLECTION), {
+            userId: currentUser.uid,
+            email: currentUser.email || '',
+            amount,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            createdAtMs: Date.now(),
+          });
+          setHint(requestMessage, '요청이 접수되었습니다. 관리자 승인을 기다려주세요.', 'success');
+        } catch (error) {
+          console.error(error);
+          setHint(requestMessage, '요청 전송에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+        }
+      };
+
+      if (signUpForm) {
+        signUpForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signUpEmailInput?.value || '').trim();
+          const password = (signUpPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '회원가입 완료! 자동 로그인됩니다.', 'success');
+            signUpForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '회원가입 중 오류가 발생했습니다.', 'error');
+          }
+        });
+      }
+
+      if (signInForm) {
+        signInForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signInEmailInput?.value || '').trim();
+          const password = (signInPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '로그인 성공!', 'success');
+            signInForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '로그인에 실패했습니다. 정보를 확인해주세요.', 'error');
+          }
+        });
+      }
+
+      if (signOutButton) {
+        signOutButton.addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            setHint(authMessage, '로그아웃 되었습니다.', 'success');
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '로그아웃 중 오류가 발생했습니다.', 'error');
+          }
+        });
+      }
+
+      quickAmountButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const amount = Number(button.dataset.amount || 0);
+          if (!currentUser) {
+            setHint(requestMessage, '로그인 후 요청할 수 있습니다.', 'error');
+            return;
+          }
+          if (amount <= 0) {
+            setHint(requestMessage, '올바른 금액을 선택해주세요.', 'error');
+            return;
+          }
+          void submitRequest(amount);
+        });
+      });
+
+      if (customAmountForm) {
+        customAmountForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (!currentUser) {
+            setHint(requestMessage, '로그인 후 요청할 수 있습니다.', 'error');
+            return;
+          }
+          const value = Number(customAmountInput?.value || 0);
+          if (!Number.isFinite(value) || value <= 0) {
+            setHint(requestMessage, '0보다 큰 숫자를 입력해주세요.', 'error');
+            return;
+          }
+          void submitRequest(Math.floor(value));
+          customAmountForm.reset();
+        });
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user || null;
+        currentUserData = null;
+        stopRequestsListener();
+
+        if (!currentUser) {
+          userPanel.classList.add('hidden');
+          setHint(requestMessage, '');
+          return;
+        }
+
+        await ensureUserDocument(currentUser);
+        const snapshot = await get(ref(db, `${USERS_COLLECTION}/${currentUser.uid}`));
+        currentUserData = snapshot.val() || {};
+        renderUserPanel(currentUserData);
+        setHint(authMessage, '');
+        setHint(requestMessage, '로그인 완료! 원하는 금액을 요청하세요.', 'success');
+        startRequestsListener(currentUser);
+      });
+    </script>
+  </body>
+</html>

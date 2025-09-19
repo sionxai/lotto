@@ -1,0 +1,2851 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>로또 번호 추첨기</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f7f7f7;
+        color: #333;
+        margin: 0;
+        padding: 40px 20px 110px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .container {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 32px 40px;
+        max-width: 960px;
+        width: 100%;
+        text-align: center;
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 24px 0;
+        align-items: center;
+      }
+
+      .controls label {
+        flex: 1 0 160px;
+        text-align: left;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .controls input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+
+      .primary-button {
+        padding: 10px 22px;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #ff9500, #ffdd00);
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .primary-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(255, 149, 0, 0.35);
+      }
+
+      .quick-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .quick-button {
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid #ffd84d;
+        background: #fff8e1;
+        color: #c27b00;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+
+      .quick-button:hover {
+        background: #ffecb3;
+        border-color: #ffce54;
+      }
+
+      .auto-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .auto-status {
+        font-size: 12px;
+        color: #888;
+      }
+
+      .results {
+        display: grid;
+        gap: 16px;
+      }
+
+      .ticket {
+        padding: 16px;
+        border-radius: 10px;
+        border: 1px solid #eee;
+        background: #fafafa;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        font-size: 20px;
+        letter-spacing: 1px;
+      }
+
+      .ticket span {
+        background: #fff;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ffd84d;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .ticket span.matched {
+        background: #fff3b0;
+        border-color: #ffb347;
+      }
+
+      .ticket span.bonus {
+        background: #e8f0ff;
+        border-color: #7aa2ff;
+      }
+
+      .ticket.winner {
+        border-color: #ffd84d;
+        background: #fff9e6;
+      }
+
+      .ticket-result {
+        flex-basis: 100%;
+        margin-top: 12px;
+        font-size: 14px;
+        color: #555;
+        text-align: center;
+      }
+
+      .hint {
+        font-size: 13px;
+        color: #888;
+        margin-top: 18px;
+      }
+
+      .summary-section {
+        margin-top: 28px;
+        text-align: left;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      @media (min-width: 720px) {
+        .summary-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .summary-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 18px;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .summary-label {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+      }
+
+      .summary-value {
+        font-size: 22px;
+        font-weight: bold;
+        margin: 0;
+        color: #333;
+      }
+
+      .summary-value.positive {
+        color: #1a8f63;
+      }
+
+      .summary-value.negative {
+        color: #d64545;
+      }
+
+      .summary-subtext {
+        margin: 0;
+        font-size: 12px;
+        color: #999;
+      }
+
+      .settings-section,
+      .stats-section {
+        margin-top: 32px;
+        text-align: left;
+      }
+
+      .settings-section h2,
+      .stats-section h2 {
+        margin: 0 0 12px;
+        font-size: 22px;
+      }
+
+      .settings-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      @media (min-width: 760px) {
+        .settings-grid {
+          grid-template-columns: 1.2fr 1fr;
+        }
+      }
+
+      .settings-card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 18px;
+        background: #fafafa;
+      }
+
+      .settings-card h3 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+
+      .number-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .number-inputs input {
+        width: 60px;
+        padding: 8px 6px;
+        text-align: center;
+      }
+
+      .bonus-input {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .bonus-input label {
+        flex: 0 0 auto;
+      }
+
+      .bonus-input input {
+        width: 80px;
+        padding: 8px 6px;
+        text-align: center;
+      }
+
+      .prize-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .prize-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        justify-content: space-between;
+      }
+
+      .prize-row label {
+        flex: 1 1 auto;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .prize-row input {
+        width: 140px;
+        text-align: right;
+      }
+
+      .settings-actions {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .stats-summary {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+      }
+
+      .stats-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .secondary-button {
+        padding: 8px 16px;
+        font-size: 13px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: #fff;
+        color: #666;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+
+      .secondary-button:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+      }
+
+      .stats-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      @media (min-width: 760px) {
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+      }
+
+      .stats-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .stats-table th,
+      .stats-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: right;
+      }
+
+      .stats-table th:first-child,
+      .stats-table td:first-child {
+        text-align: left;
+      }
+
+      .stats-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .stats-chart h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .rank-stats h3 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+
+      .rank-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 6px;
+      }
+
+      .rank-table th,
+      .rank-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: right;
+      }
+
+      .rank-table th:first-child,
+      .rank-table td:first-child {
+        text-align: left;
+      }
+
+      .rank-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .chart {
+        display: grid;
+        grid-auto-rows: minmax(22px, auto);
+        gap: 6px;
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #444;
+      }
+
+      .bar-label {
+        width: 28px;
+      }
+
+      .bar-track {
+        flex: 1;
+        height: 10px;
+        background: #ececec;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        width: var(--percentage, 0%);
+        background: linear-gradient(135deg, #ff9500, #ffdd00);
+      }
+
+      .bar-value {
+        width: 32px;
+        text-align: right;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .card-grid {
+        display: grid;
+        gap: 16px;
+        margin: 24px 0;
+      }
+
+      @media (min-width: 720px) {
+        .card-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .card {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 20px;
+        background: #fafafa;
+        text-align: left;
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+
+      .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .form-field label {
+        font-size: 13px;
+        color: #555;
+      }
+
+      .form-field input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+      }
+
+      .helper-text {
+        font-size: 12px;
+        color: #888;
+        margin: 0 0 12px;
+      }
+
+      .user-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        background: #fff8e1;
+        border: 1px solid #ffd84d;
+        border-radius: 10px;
+      }
+
+      .user-panel-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .user-panel-info strong {
+        font-size: 16px;
+        color: #c27b00;
+      }
+
+      .user-panel-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .user-panel-actions a {
+        text-decoration: none;
+      }
+
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid #d0c7ff;
+        background: #fff;
+        color: #6a4bff;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .link-button:hover {
+        background: #f3efff;
+        border-color: #b7aaff;
+        color: #5434d8;
+      }
+
+      .link-button.primary {
+        border: none;
+        background: linear-gradient(135deg, #6a4bff, #9d7bff);
+        color: #fff;
+      }
+
+      .link-button.primary:hover {
+        background: linear-gradient(135deg, #5a3cf0, #8670ff);
+      }
+
+      .badge {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+        background: #ffd84d;
+        color: #7a5200;
+      }
+
+      .admin-section {
+        margin-bottom: 32px;
+        padding: 20px;
+        border: 1px solid #ffd84d;
+        border-radius: 10px;
+        background: #fffdf4;
+        text-align: left;
+      }
+
+      .admin-section h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+
+      .admin-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+      }
+
+      .admin-actions .form-field {
+        margin-bottom: 0;
+        min-width: 200px;
+      }
+
+      .hint.error {
+        color: #d64545;
+      }
+
+      .hint.success {
+        color: #1a8f63;
+      }
+
+      .community-section {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      @media (min-width: 960px) {
+        .community-section {
+          grid-template-columns: 1.1fr 1.4fr;
+        }
+      }
+
+      .presence-card,
+      .chat-card {
+        border: 1px solid #ffd84d;
+        background: #fffdf4;
+        border-radius: 10px;
+        padding: 18px;
+        text-align: left;
+      }
+
+      .presence-card h2,
+      .chat-card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .online-users-list {
+        max-height: 220px;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 6px;
+      }
+
+      .online-users-list li {
+        padding: 8px 10px;
+        border: 1px solid #ffe6a1;
+        border-radius: 8px;
+        background: #fffaf0;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .presence-meta {
+        font-size: 12px;
+        color: #a17400;
+      }
+
+      .chat-messages {
+        height: 260px;
+        border: 1px solid #ffd84d;
+        border-radius: 8px;
+        background: #fffef7;
+        padding: 12px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .chat-message {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        border-left: 3px solid #ffd84d;
+        padding-left: 8px;
+      }
+
+      .chat-message.system {
+        border-left-color: #ccc;
+        color: #666;
+        font-style: italic;
+      }
+
+      .chat-message-header {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        font-weight: 600;
+        color: #a17400;
+      }
+
+      .chat-message-time {
+        font-size: 11px;
+        color: #999;
+      }
+
+      .chat-message-body {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      #chatForm {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      #chatInput {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+      }
+
+      #chatStatus {
+        margin: 8px 0 0;
+      }
+
+      .community-section.hidden {
+        display: none;
+      }
+
+      .admin-user-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: flex-end;
+      }
+
+      .admin-user-picker .form-field {
+        margin-bottom: 0;
+        min-width: 220px;
+        flex: 1 1 220px;
+      }
+
+      #grantSearch {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+      }
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(6px);
+        border-top: 1px solid #e1dcff;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999;
+        padding: 0 16px;
+        gap: 16px;
+      }
+
+      .bottom-nav button,
+      .bottom-nav a {
+        background: none;
+        border: none;
+        font-size: 13px;
+        color: #6a4bff;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        padding: 6px 10px;
+      }
+
+      .bottom-nav button:hover,
+      .bottom-nav a:hover {
+        color: #5335cf;
+      }
+
+      .bottom-nav button:disabled {
+        color: #aaa3d9;
+      }
+
+      .bottom-nav-icon {
+        font-size: 18px;
+      }
+
+      .bottom-nav.hidden {
+        display: none;
+      }
+
+      @media (min-width: 960px) {
+        .bottom-nav {
+          height: 72px;
+          justify-content: center;
+          gap: 40px;
+        }
+      }
+
+
+      #grantUserSelect {
+        width: 100%;
+        min-height: 180px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      #grantUserSelect option {
+        padding: 6px;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>로또 번호 추첨기</h1>
+      <div id="authSection" class="card-grid">
+        <div class="card">
+          <h2>회원가입</h2>
+          <form id="signUpForm">
+            <div class="form-field">
+              <label for="signUpEmail">이메일</label>
+              <input type="email" id="signUpEmail" required autocomplete="email" />
+            </div>
+            <div class="form-field">
+              <label for="signUpPassword">비밀번호</label>
+              <input type="password" id="signUpPassword" required minlength="6" autocomplete="new-password" />
+            </div>
+            <p class="helper-text">회원가입 시 1억원이 기본으로 지급됩니다.</p>
+            <button class="primary-button" type="submit">회원가입</button>
+          </form>
+        </div>
+        <div class="card">
+          <h2>로그인</h2>
+          <form id="signInForm">
+            <div class="form-field">
+              <label for="signInEmail">이메일</label>
+              <input type="email" id="signInEmail" required autocomplete="email" />
+            </div>
+            <div class="form-field">
+              <label for="signInPassword">비밀번호</label>
+              <input type="password" id="signInPassword" required autocomplete="current-password" />
+            </div>
+            <button class="primary-button" type="submit">로그인</button>
+          </form>
+        </div>
+      </div>
+      <div id="authMessage" class="hint"></div>
+      <div id="userPanel" class="user-panel hidden">
+        <div class="user-panel-info">
+          <strong id="userEmail">email@example.com</strong>
+          <span>보유 금액: <span id="userBalance">0원</span></span>
+          <span>누적 사용: <span id="userSpent">0원</span></span>
+          <span>누적 당첨: <span id="userWon">0원</span></span>
+          <span id="userRoleBadge" class="badge hidden">관리자</span>
+        </div>
+        <div class="user-panel-actions">
+          <a href="purchase.html" class="link-button primary" target="_blank" rel="noopener">충전 요청하기</a>
+          <a id="adminPageButton" href="admin.html" class="link-button hidden" target="_blank" rel="noopener">관리자 페이지</a>
+          <button id="signOutButton" class="secondary-button" type="button">로그아웃</button>
+        </div>
+      </div>
+      <section id="communitySection" class="community-section hidden">
+        <div class="presence-card">
+          <h2>접속 중인 사용자</h2>
+          <p id="onlineUsersEmptyMessage" class="hint">로그인한 사용자가 접속하면 여기에 표시됩니다.</p>
+          <ul id="onlineUsersList" class="online-users-list"></ul>
+        </div>
+        <div class="chat-card">
+          <h2>실시간 채팅</h2>
+          <div id="chatMessages" class="chat-messages"></div>
+          <form id="chatForm">
+            <input id="chatInput" type="text" maxlength="500" placeholder="메시지를 입력하세요 (Enter로 전송)" autocomplete="off" />
+            <button class="primary-button" type="submit">전송</button>
+          </form>
+          <p id="chatStatus" class="hint"></p>
+        </div>
+      </section>
+      <section id="adminSection" class="admin-section hidden">
+        <h2>관리자 도구</h2>
+        <p class="hint">관리자는 금액 제한 없이 추첨할 수 있으며, 아래 사용자 목록에서 선택하거나 이메일을 입력해 금액을 지급할 수 있습니다.</p>
+        <div class="admin-user-picker">
+          <div class="form-field">
+            <label for="grantSearch">사용자 검색</label>
+            <input type="text" id="grantSearch" placeholder="이메일 일부를 입력해 필터링하세요" />
+          </div>
+          <div class="form-field">
+            <label for="grantUserSelect">사용자 목록</label>
+            <select id="grantUserSelect" size="6">
+              <option value="" disabled selected>사용자 목록을 불러오는 중...</option>
+            </select>
+          </div>
+          <button id="refreshUsersButton" class="secondary-button" type="button">목록 새로고침</button>
+        </div>
+        <form id="grantForm" class="admin-actions">
+          <div class="form-field">
+            <label for="grantEmail">이메일 (직접 입력 또는 위 목록 선택)</label>
+            <input type="email" id="grantEmail" placeholder="user@example.com" />
+          </div>
+          <div class="form-field">
+            <label for="grantAmount">지급 금액 (원)</label>
+            <input type="number" id="grantAmount" min="1" step="1" inputmode="numeric" />
+          </div>
+          <button class="primary-button" type="submit">금액 지급</button>
+        </form>
+        <div id="adminMessage" class="hint"></div>
+      </section>
+      <div id="appSection" class="hidden">
+        <div class="controls">
+          <label>
+            몇 게임을 생성할까요?
+            <input type="number" id="gameCount" min="1" max="500" value="1" />
+          </label>
+          <button id="drawButton" class="primary-button">추첨</button>
+          <div class="quick-buttons">
+            <button data-games="1" class="quick-button" type="button">1게임</button>
+            <button data-games="10" class="quick-button" type="button">10게임</button>
+            <button data-games="100" class="quick-button" type="button">100게임</button>
+            <button data-games="500" class="quick-button" type="button">500게임</button>
+          </div>
+          <div class="auto-buttons">
+            <button id="autoFirstButton" class="secondary-button" type="button">1등 나올 때까지</button>
+            <button id="autoSecondButton" class="secondary-button" type="button">2등 나올 때까지</button>
+            <button id="autoStopButton" class="secondary-button" type="button" disabled>자동 중지</button>
+            <span id="autoStatusText" class="auto-status">자동 추첨 대기 중</span>
+          </div>
+        </div>
+        <section class="summary-section">
+          <div class="summary-grid">
+            <div class="summary-card">
+              <p class="summary-label">총 지출</p>
+              <p id="totalCostText" class="summary-value">0원</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-label">총 당첨금</p>
+              <p id="totalPrizeText" class="summary-value">0원</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-label">손익</p>
+              <p id="netResultText" class="summary-value">0원</p>
+              <p id="netStatusText" class="summary-subtext">손익 없음</p>
+            </div>
+          </div>
+        </section>
+      <section class="settings-section">
+        <h2>당첨 설정</h2>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>당첨 번호 (6개)</h3>
+            <div class="number-inputs" id="winningNumberInputs"></div>
+            <div class="bonus-input">
+              <label for="bonusNumberInput">보너스 번호</label>
+              <input type="number" id="bonusNumberInput" min="1" max="45" />
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>당첨금 설정</h3>
+            <div class="prize-list" id="prizeInputs"></div>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button id="randomizeWinningButton" class="secondary-button" type="button">
+            당첨 번호 랜덤 설정
+          </button>
+          <button id="applySettingsButton" class="secondary-button" type="button">
+            설정 적용
+          </button>
+        </div>
+      </section>
+      <div id="results" class="results"></div>
+      <p class="hint">
+        1~45 사이의 숫자 6개와 보너스 번호 1개를 설정할 수 있습니다. 1등은 6개 일치, 2등은 5개 일치 + 보너스,
+        3등은 5개 일치, 4등은 4개 일치, 5등은 3개 일치입니다.
+      </p>
+      <section class="stats-section">
+        <div class="stats-header">
+          <h2>통계</h2>
+          <button id="resetStatsButton" class="secondary-button" type="button">
+            통계 리셋
+          </button>
+        </div>
+        <p id="statsSummary" class="stats-summary"></p>
+        <div class="stats-grid">
+          <div class="stats-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>번호</th>
+                  <th>출현</th>
+                  <th>비율</th>
+                </tr>
+              </thead>
+              <tbody id="statsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="stats-chart">
+            <h3>분포 그래프</h3>
+            <div id="distributionChart" class="chart"></div>
+          </div>
+          <div class="rank-stats">
+            <h3>당첨 등수 누적</h3>
+            <table class="rank-table">
+              <thead>
+                <tr>
+                  <th>등수</th>
+                  <th>당첨수</th>
+                  <th>당첨금</th>
+                  <th>누적 금액</th>
+                  <th>이론 확률</th>
+                  <th>누적 확률</th>
+                </tr>
+              </thead>
+              <tbody id="rankStatsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      </div>
+    <nav id="bottomNav" class="bottom-nav">
+      <button id="bottomNavDrawButton" type="button">
+        <span class="bottom-nav-icon">🎰</span>
+        <span>추첨</span>
+      </button>
+      <a id="bottomNavPurchaseLink" href="purchase.html" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">💰</span>
+        <span>충전</span>
+      </a>
+      <a id="bottomNavAdminLink" href="admin.html" class="hidden" target="_blank" rel="noopener">
+        <span class="bottom-nav-icon">🛠</span>
+        <span>관리자</span>
+      </a>
+    </nav>
+
+    <script type="module">
+
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        get,
+        set,
+        update,
+        push,
+        remove,
+        runTransaction,
+        serverTimestamp,
+        query,
+        orderByChild,
+        equalTo,
+        limitToFirst,
+        limitToLast,
+        onValue,
+        onChildAdded,
+        onDisconnect,
+      } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB7wCVlUoU-Qqx70jDIfrK4Xq7N4FgqnoE",
+        authDomain: "lotto-e8ede.firebaseapp.com",
+        projectId: "lotto-e8ede",
+        storageBucket: "lotto-e8ede.firebasestorage.app",
+        messagingSenderId: "869009808834",
+        appId: "1:869009808834:web:92053afac20e104015ca5b",
+        measurementId: "G-2RD2YDR50Q",
+      };
+
+      const firebaseApp = initializeApp(firebaseConfig);
+      const auth = getAuth(firebaseApp);
+      const DATABASE_URL = "https://lotto-e8ede-default-rtdb.asia-southeast1.firebasedatabase.app/";
+      const db = getDatabase(firebaseApp, DATABASE_URL);
+
+      const INITIAL_BALANCE = 100_000_000;
+      const ADMIN_EMAILS = ["admin@admin.com"];
+      const USERS_COLLECTION = "users";
+      const TRANSACTIONS_SUBCOLLECTION = "transactions";
+      const PRESENCE_COLLECTION = "presence";
+      const CHAT_MESSAGES_COLLECTION = "chat/messages";
+      const CHAT_MESSAGE_LIMIT = 50;
+
+
+      const authSection = document.getElementById('authSection');
+      const authMessage = document.getElementById('authMessage');
+      const userPanel = document.getElementById('userPanel');
+      const appSection = document.getElementById('appSection');
+      const userEmailText = document.getElementById('userEmail');
+      const userBalanceText = document.getElementById('userBalance');
+      const userSpentText = document.getElementById('userSpent');
+      const userWonText = document.getElementById('userWon');
+      const userRoleBadge = document.getElementById('userRoleBadge');
+      const adminPageButton = document.getElementById('adminPageButton');
+      const signUpForm = document.getElementById('signUpForm');
+      const signInForm = document.getElementById('signInForm');
+      const signOutButton = document.getElementById('signOutButton');
+      const grantForm = document.getElementById('grantForm');
+      const grantEmailInput = document.getElementById('grantEmail');
+      const grantAmountInput = document.getElementById('grantAmount');
+      const grantSearchInput = document.getElementById('grantSearch');
+      const grantUserSelect = document.getElementById('grantUserSelect');
+      const refreshUsersButton = document.getElementById('refreshUsersButton');
+      const adminSection = document.getElementById('adminSection');
+      const adminMessage = document.getElementById('adminMessage');
+      const signUpEmailInput = document.getElementById('signUpEmail');
+      const signUpPasswordInput = document.getElementById('signUpPassword');
+      const signInEmailInput = document.getElementById('signInEmail');
+      const signInPasswordInput = document.getElementById('signInPassword');
+
+      const communitySection = document.getElementById('communitySection');
+      const onlineUsersList = document.getElementById('onlineUsersList');
+      const onlineUsersEmptyMessage = document.getElementById('onlineUsersEmptyMessage');
+      const chatMessagesContainer = document.getElementById('chatMessages');
+      const chatForm = document.getElementById('chatForm');
+      const chatInput = document.getElementById('chatInput');
+      const chatStatus = document.getElementById('chatStatus');
+
+      const getUserRef = (userId) => ref(db, `${USERS_COLLECTION}/${userId}`);
+      const getTransactionsRef = (userId) => ref(db, `${USERS_COLLECTION}/${userId}/${TRANSACTIONS_SUBCOLLECTION}`);
+
+      const drawButton = document.getElementById('drawButton');
+      const results = document.getElementById('results');
+      const gameCountInput = document.getElementById('gameCount');
+      const quickButtons = Array.from(document.querySelectorAll('.quick-button'));
+      const totalCostText = document.getElementById('totalCostText');
+      const totalPrizeText = document.getElementById('totalPrizeText');
+      const netResultText = document.getElementById('netResultText');
+      const netStatusText = document.getElementById('netStatusText');
+      const statsSummary = document.getElementById('statsSummary');
+      const statsTableBody = document.getElementById('statsTableBody');
+      const distributionChart = document.getElementById('distributionChart');
+      const resetStatsButton = document.getElementById('resetStatsButton');
+      const winningNumberInputsContainer = document.getElementById('winningNumberInputs');
+      const bonusNumberInput = document.getElementById('bonusNumberInput');
+      const prizeInputsContainer = document.getElementById('prizeInputs');
+      const applySettingsButton = document.getElementById('applySettingsButton');
+      const randomizeWinningButton = document.getElementById('randomizeWinningButton');
+      const rankStatsTableBody = document.getElementById('rankStatsTableBody');
+      const autoFirstButton = document.getElementById('autoFirstButton');
+      const autoSecondButton = document.getElementById('autoSecondButton');
+      const autoStopButton = document.getElementById('autoStopButton');
+      const autoStatusText = document.getElementById('autoStatusText');
+
+      let currentUser = null;
+      let currentUserData = null;
+      let currentUserIsAdmin = false;
+      let unsubscribeUserDoc = null;
+      let controlsLocked = true;
+      let unsubscribeUsersList = null;
+      let allUsersCache = [];
+      let onlineUsersCache = [];
+
+      let presenceUnsubscribe = null;
+      let currentPresenceRef = null;
+      let chatListenerUnsubscribe = null;
+      let chatMessagesCache = [];
+      let chatMessageKeys = new Set();
+
+      const statsState = {
+        totalGames: 0,
+        totalNumbers: 0,
+        frequency: Array(46).fill(0),
+        rankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      };
+
+      const settingsState = {
+        winningNumbers: [1, 2, 3, 4, 5, 6],
+        bonusNumber: 7,
+        prizeAmounts: {
+          1: 2000000000,
+          2: 50000000,
+          3: 1500000,
+          4: 50000,
+          5: 5000,
+        },
+      };
+
+      const winningNumberInputs = [];
+      const prizeInputs = [];
+
+      const TICKET_PRICE = 2000;
+
+      const setHint = (element, message = '', type = 'info') => {
+        if (!element) {
+          return;
+        }
+        element.textContent = message || '';
+        element.classList.remove('error', 'success');
+        if (!message) {
+          return;
+        }
+        if (type === 'error') {
+          element.classList.add('error');
+        } else if (type === 'success') {
+          element.classList.add('success');
+        }
+      };
+
+      const normalizeEmail = (value) => (value || '').trim().toLowerCase();
+
+      const setControlsLocked = (locked) => {
+        controlsLocked = locked;
+        updateAutoControls();
+      };
+
+      const withControlsLocked = async (callback) => {
+        setControlsLocked(true);
+        try {
+          await callback();
+        } finally {
+          setControlsLocked(false);
+        }
+      };
+
+      const formatUserOptionLabel = (user) => {
+        const email = user.email || '(이메일 없음)';
+        const balanceText = user.isAdmin ? '무제한' : formatCurrency(user.balance || 0);
+        const adminLabel = user.isAdmin ? ' · 관리자' : '';
+        return `${email} · 잔액 ${balanceText}${adminLabel}`;
+      };
+
+      const renderUserOptions = () => {
+        if (!grantUserSelect) {
+          return;
+        }
+        if (!currentUserIsAdmin) {
+          grantUserSelect.innerHTML = '<option value="" disabled selected>관리자 로그인 후 목록을 확인할 수 있습니다.</option>';
+          return;
+        }
+        const searchTerm = normalizeEmail(grantSearchInput?.value || '');
+        const filtered = allUsersCache
+          .filter((user) => !searchTerm || user.emailLower.includes(searchTerm))
+          .sort((a, b) => a.emailLower.localeCompare(b.emailLower));
+
+        grantUserSelect.innerHTML = '';
+
+        if (!filtered.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.disabled = true;
+          option.textContent = searchTerm ? '일치하는 사용자가 없습니다.' : '등록된 사용자가 없습니다.';
+          grantUserSelect.appendChild(option);
+          return;
+        }
+
+        filtered.forEach((user) => {
+          const option = document.createElement('option');
+          option.value = user.uid;
+          option.dataset.email = user.email || '';
+          option.dataset.emailLower = user.emailLower || '';
+          option.dataset.balance = String(user.balance ?? 0);
+          option.textContent = formatUserOptionLabel(user);
+          grantUserSelect.appendChild(option);
+        });
+
+        const normalizedInputEmail = normalizeEmail(grantEmailInput?.value || '');
+        if (normalizedInputEmail) {
+          const matched = filtered.find((user) => user.emailLower === normalizedInputEmail);
+          if (matched) {
+            grantUserSelect.value = matched.uid;
+            return;
+          }
+        }
+        grantUserSelect.selectedIndex = 0;
+        const firstOption = grantUserSelect.selectedOptions[0];
+        if (firstOption && grantEmailInput && !grantEmailInput.value) {
+          grantEmailInput.value = firstOption.dataset.email || firstOption.dataset.emailLower || '';
+        }
+      };
+
+      const startUsersListener = () => {
+        if (!currentUserIsAdmin) {
+          renderUserOptions();
+          return;
+        }
+        if (unsubscribeUsersList) {
+          return;
+        }
+        if (grantUserSelect) {
+          grantUserSelect.innerHTML = '<option value="" disabled selected>사용자 목록을 불러오는 중...</option>';
+        }
+        const usersRef = ref(db, USERS_COLLECTION);
+        unsubscribeUsersList = onValue(
+          usersRef,
+          (snapshot) => {
+            const value = snapshot.val() || {};
+            allUsersCache = Object.entries(value).map(([uid, data]) => ({
+              uid,
+              email: data?.email || '',
+              emailLower: normalizeEmail(data?.emailLower || data?.email || ''),
+              balance: typeof data?.balance === 'number' ? data.balance : Number(data?.balance) || 0,
+              isAdmin: Boolean(data?.isAdmin),
+            }));
+            renderUserOptions();
+          },
+          (error) => {
+            console.error(error);
+            setHint(adminMessage, '사용자 목록을 불러오지 못했습니다.', 'error');
+          }
+        );
+      };
+
+      const stopUsersListener = () => {
+        if (unsubscribeUsersList) {
+          unsubscribeUsersList();
+          unsubscribeUsersList = null;
+        }
+        allUsersCache = [];
+        if (grantSearchInput) {
+          grantSearchInput.value = '';
+        }
+        if (grantUserSelect) {
+          grantUserSelect.innerHTML = '<option value="" disabled selected>관리자 로그인 후 목록을 확인할 수 있습니다.</option>';
+        }
+      };
+
+      const renderOnlineUsers = () => {
+        if (!onlineUsersList) {
+          return;
+        }
+        onlineUsersList.innerHTML = '';
+        if (!onlineUsersCache.length) {
+          if (onlineUsersEmptyMessage) {
+            onlineUsersEmptyMessage.textContent = '로그인한 사용자가 접속하면 여기에 표시됩니다.';
+            onlineUsersEmptyMessage.classList.remove('hidden');
+            onlineUsersEmptyMessage.classList.remove('error');
+          }
+          return;
+        }
+        if (onlineUsersEmptyMessage) {
+          onlineUsersEmptyMessage.textContent = '현재 접속 중인 사용자 목록입니다.';
+          onlineUsersEmptyMessage.classList.remove('error');
+          onlineUsersEmptyMessage.classList.add('hidden');
+        }
+        onlineUsersCache
+          .slice()
+          .sort((a, b) => a.emailLower.localeCompare(b.emailLower))
+          .forEach((user) => {
+            const item = document.createElement('li');
+            const label = document.createElement('span');
+            label.textContent = user.email || '(이메일 없음)';
+            item.appendChild(label);
+
+            const meta = document.createElement('span');
+            meta.className = 'presence-meta';
+            meta.textContent = user.isAdmin ? '관리자' : '일반';
+            item.appendChild(meta);
+
+            onlineUsersList.appendChild(item);
+          });
+      };
+
+      const startPresenceListener = () => {
+        if (presenceUnsubscribe) {
+          renderOnlineUsers();
+          return;
+        }
+        const presenceRef = ref(db, PRESENCE_COLLECTION);
+        presenceUnsubscribe = onValue(
+          presenceRef,
+          (snapshot) => {
+            const value = snapshot.val() || {};
+            onlineUsersCache = Object.entries(value).map(([uid, data]) => ({
+              uid,
+              email: data?.email || '',
+              emailLower: normalizeEmail(data?.emailLower || data?.email || ''),
+              isAdmin: Boolean(data?.isAdmin),
+            }));
+            renderOnlineUsers();
+          },
+          (error) => {
+            console.error(error);
+            if (onlineUsersEmptyMessage) {
+              onlineUsersEmptyMessage.textContent = '접속자 정보를 불러오지 못했습니다.';
+              onlineUsersEmptyMessage.classList.remove('hidden');
+              onlineUsersEmptyMessage.classList.add('error');
+            }
+          }
+        );
+      };
+
+      const stopPresenceListener = () => {
+        if (presenceUnsubscribe) {
+          presenceUnsubscribe();
+          presenceUnsubscribe = null;
+        }
+        onlineUsersCache = [];
+        renderOnlineUsers();
+      };
+
+      const startPresenceTracking = async (user, { isAdmin } = {}) => {
+        if (!user) {
+          return;
+        }
+        const emailLower = normalizeEmail(user.email || '');
+        if (!currentPresenceRef) {
+          currentPresenceRef = ref(db, `${PRESENCE_COLLECTION}/${user.uid}`);
+          try {
+            await set(currentPresenceRef, {
+              email: user.email || '',
+              emailLower,
+              isAdmin: Boolean(isAdmin),
+              state: 'online',
+              lastActiveAt: serverTimestamp(),
+            });
+            try {
+              onDisconnect(currentPresenceRef).remove();
+            } catch (disconnectError) {
+              console.error('Presence disconnect setup failed', disconnectError);
+            }
+          } catch (error) {
+            console.error('Failed to set presence', error);
+          }
+        } else {
+          try {
+            await update(currentPresenceRef, {
+              email: user.email || '',
+              emailLower,
+              isAdmin: Boolean(isAdmin),
+              state: 'online',
+              lastActiveAt: serverTimestamp(),
+            });
+          } catch (error) {
+            console.error('Failed to update presence', error);
+          }
+        }
+      };
+
+      const stopPresenceTracking = async () => {
+        if (!currentPresenceRef) {
+          return;
+        }
+        try {
+          await remove(currentPresenceRef);
+        } catch (error) {
+          console.error('Failed to remove presence', error);
+        } finally {
+          currentPresenceRef = null;
+        }
+      };
+
+      const clearChatMessages = () => {
+        chatMessagesCache = [];
+        chatMessageKeys = new Set();
+        if (chatMessagesContainer) {
+          chatMessagesContainer.innerHTML = '';
+        }
+      };
+
+      const scrollChatToBottom = () => {
+        if (!chatMessagesContainer) {
+          return;
+        }
+        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+      };
+
+      const formatChatTimestamp = (value) => {
+        const timestamp = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(timestamp)) {
+          return '';
+        }
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+          return '';
+        }
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${month}/${day} ${hours}:${minutes}`;
+      };
+
+      const appendChatMessage = (key, data) => {
+        if (!chatMessagesContainer || chatMessageKeys.has(key)) {
+          return;
+        }
+        chatMessageKeys.add(key);
+        chatMessagesCache.push({ key, ...data });
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chat-message';
+        if (data.system) {
+          wrapper.classList.add('system');
+        }
+
+        const header = document.createElement('div');
+        header.className = 'chat-message-header';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = data.email || (data.system ? '안내' : '알 수 없음');
+        header.appendChild(nameSpan);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'chat-message-time';
+        timeSpan.textContent = formatChatTimestamp(data.createdAt ?? data.createdAtMs ?? Date.now());
+        header.appendChild(timeSpan);
+        wrapper.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'chat-message-body';
+        body.textContent = data.text || '';
+        wrapper.appendChild(body);
+
+        chatMessagesContainer.appendChild(wrapper);
+
+        if (chatMessagesContainer.children.length > CHAT_MESSAGE_LIMIT) {
+          chatMessagesContainer.removeChild(chatMessagesContainer.firstChild);
+        }
+
+        scrollChatToBottom();
+      };
+
+      const startChatListener = () => {
+        if (chatListenerUnsubscribe) {
+          return;
+        }
+        if (!chatMessagesContainer) {
+          return;
+        }
+        clearChatMessages();
+        setHint(chatStatus, '');
+        const messagesRef = query(
+          ref(db, CHAT_MESSAGES_COLLECTION),
+          orderByChild('createdAt'),
+          limitToLast(CHAT_MESSAGE_LIMIT)
+        );
+        chatListenerUnsubscribe = onChildAdded(
+          messagesRef,
+          (snapshot) => {
+            const key = snapshot.key || `message-${Date.now()}`;
+            const value = snapshot.val() || {};
+            appendChatMessage(key, value);
+          },
+          (error) => {
+            console.error(error);
+            setHint(chatStatus, '채팅 메시지를 불러오지 못했습니다.', 'error');
+          }
+        );
+      };
+
+      const stopChatListener = () => {
+        if (chatListenerUnsubscribe) {
+          chatListenerUnsubscribe();
+          chatListenerUnsubscribe = null;
+        }
+        clearChatMessages();
+      };
+
+      const setChatAvailability = (available) => {
+        if (chatInput) {
+          chatInput.disabled = !available;
+          if (!available) {
+            chatInput.value = '';
+          }
+        }
+        if (!available) {
+          clearChatMessages();
+          if (chatStatus) {
+            chatStatus.classList.remove('error');
+          }
+        }
+      };
+
+      const autoDrawState = {
+        running: false,
+        targetRank: null,
+        batchSize: 1,
+        timeoutId: null,
+      };
+
+      const sanitizeGameCount = (value) => {
+        const parsed = Number.isFinite(value) ? value : 1;
+        const rounded = Math.floor(parsed);
+        return Math.min(Math.max(rounded, 1), 500);
+      };
+
+      const prizeLabels = {
+        1: '1등',
+        2: '2등',
+        3: '3등',
+        4: '4등',
+        5: '5등',
+      };
+
+      const combination = (n, k) => {
+        if (k < 0 || k > n) return 0;
+        let result = 1;
+        const upper = Math.min(k, n - k);
+        for (let i = 1; i <= upper; i += 1) {
+          result = (result * (n - upper + i)) / i;
+        }
+        return result;
+      };
+
+      const totalCombinations = combination(45, 6);
+      const theoreticalCombinationCounts = {
+        1: 1,
+        2: combination(6, 5),
+        3: combination(6, 5) * combination(38, 1),
+        4: combination(6, 4) * combination(39, 2),
+        5: combination(6, 3) * combination(39, 3),
+      };
+
+      const theoreticalProbabilities = Object.fromEntries(
+        Object.entries(theoreticalCombinationCounts).map(([rank, count]) => [rank, count / totalCombinations])
+      );
+
+      const formatPercentage = (probability) => {
+        if (!Number.isFinite(probability) || probability <= 0) {
+          return '0%';
+        }
+
+        const percentValue = probability * 100;
+        if (percentValue < 0.001) {
+          return `${percentValue.toFixed(6)}%`;
+        }
+        if (percentValue < 0.1) {
+          return `${percentValue.toFixed(4)}%`;
+        }
+        if (percentValue < 1) {
+          return `${percentValue.toFixed(3)}%`;
+        }
+        return `${percentValue.toFixed(2)}%`;
+      };
+
+      const formatCurrency = (amount) => `${amount.toLocaleString()}원`;
+
+      const setupWinningNumberInputs = () => {
+        winningNumberInputsContainer.innerHTML = '';
+        winningNumberInputs.length = 0;
+        settingsState.winningNumbers.forEach((value, index) => {
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '1';
+          input.max = '45';
+          input.value = value;
+          input.dataset.index = index;
+          winningNumberInputsContainer.appendChild(input);
+          winningNumberInputs.push(input);
+        });
+        bonusNumberInput.value = settingsState.bonusNumber;
+      };
+
+      const setupPrizeInputs = () => {
+        prizeInputsContainer.innerHTML = '';
+        prizeInputs.length = 0;
+        Object.entries(prizeLabels).forEach(([rank, label]) => {
+          const row = document.createElement('div');
+          row.className = 'prize-row';
+
+          const rowLabel = document.createElement('label');
+          rowLabel.textContent = `${label} 당첨금`;
+          row.appendChild(rowLabel);
+
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.value = settingsState.prizeAmounts[rank];
+          input.dataset.rank = rank;
+          row.appendChild(input);
+
+          prizeInputsContainer.appendChild(row);
+          prizeInputs.push(input);
+        });
+      };
+
+      const parseWinningNumbers = () => {
+        const values = winningNumberInputs
+          .map((input) => parseInt(input.value, 10))
+          .filter((value) => Number.isInteger(value));
+
+        if (values.length !== 6) {
+          return null;
+        }
+
+        const uniqueValues = Array.from(new Set(values));
+        const isValidRange = uniqueValues.every((value) => value >= 1 && value <= 45);
+        if (!isValidRange || uniqueValues.length !== 6) {
+          return null;
+        }
+
+        uniqueValues.sort((a, b) => a - b);
+        return uniqueValues;
+      };
+
+      const parseBonusNumber = () => {
+        const value = parseInt(bonusNumberInput.value, 10);
+        if (!Number.isInteger(value) || value < 1 || value > 45) {
+          return null;
+        }
+        return value;
+      };
+
+      const parsePrizeAmounts = () => {
+        const prizeAmounts = {};
+        let valid = true;
+
+        prizeInputs.forEach((input) => {
+          const rank = parseInt(input.dataset.rank, 10);
+          const value = Number(input.value);
+          if (Number.isNaN(value) || value < 0) {
+            valid = false;
+            return;
+          }
+          prizeAmounts[rank] = Math.floor(value);
+        });
+
+        if (!valid) {
+          return null;
+        }
+
+        return prizeAmounts;
+      };
+
+      const validateSettings = () => {
+        if (!settingsState.winningNumbers || settingsState.winningNumbers.length !== 6) {
+          alert('당첨 번호가 올바르게 설정되지 않았습니다. 설정을 확인해주세요.');
+          return false;
+        }
+
+        if (
+          typeof settingsState.bonusNumber !== 'number' ||
+          settingsState.bonusNumber < 1 ||
+          settingsState.bonusNumber > 45 ||
+          settingsState.winningNumbers.includes(settingsState.bonusNumber)
+        ) {
+          alert('보너스 번호가 올바르게 설정되지 않았습니다. 설정을 확인해주세요.');
+          return false;
+        }
+
+        return true;
+      };
+
+      const applySettings = () => {
+        const winningNumbers = parseWinningNumbers();
+        if (!winningNumbers) {
+          alert('당첨 번호를 1~45 사이의 중복 없는 숫자 6개로 입력해주세요.');
+          return;
+        }
+
+        const bonusNumber = parseBonusNumber();
+        if (bonusNumber === null) {
+          alert('보너스 번호를 1~45 사이의 숫자로 입력해주세요.');
+          return;
+        }
+
+        if (winningNumbers.includes(bonusNumber)) {
+          alert('보너스 번호는 당첨 번호와 겹칠 수 없습니다.');
+          return;
+        }
+
+        const prizeAmounts = parsePrizeAmounts();
+        if (!prizeAmounts) {
+          alert('당첨금은 0 이상의 숫자로 입력해주세요.');
+          return;
+        }
+
+        settingsState.winningNumbers = winningNumbers;
+        settingsState.bonusNumber = bonusNumber;
+        settingsState.prizeAmounts = prizeAmounts;
+        winningNumberInputs.forEach((input, index) => {
+          input.value = winningNumbers[index];
+        });
+        bonusNumberInput.value = bonusNumber;
+        prizeInputs.forEach((input) => {
+          const rank = parseInt(input.dataset.rank, 10);
+          input.value = prizeAmounts[rank];
+        });
+        renderStatistics();
+      };
+
+      const createTicketElement = (numbers, matchedNumbers, rank, prizeAmount, bonusMatched, bonusNumber) => {
+        const div = document.createElement('div');
+        div.className = 'ticket';
+
+        if (rank) {
+          div.classList.add('winner');
+        }
+
+        const matchedSet = new Set(matchedNumbers);
+
+        numbers.forEach((num) => {
+          const span = document.createElement('span');
+          span.textContent = num.toString().padStart(2, '0');
+          if (matchedSet.has(num)) {
+            span.classList.add('matched');
+          } else if (bonusMatched && num === bonusNumber) {
+            span.classList.add('bonus');
+          }
+          div.appendChild(span);
+        });
+
+        const result = document.createElement('div');
+        result.className = 'ticket-result';
+        const matchCount = matchedNumbers.length;
+
+        let matchLabel;
+        if (matchCount === 0 && bonusMatched) {
+          matchLabel = '보너스 번호만 일치';
+        } else {
+          matchLabel = `${matchCount}개 일치`;
+          if (bonusMatched && matchCount > 0) {
+            matchLabel += ' + 보너스';
+          }
+        }
+
+        if (rank) {
+          result.innerHTML = `${matchLabel}, <strong>${rank}등</strong> (${formatCurrency(prizeAmount)})`;
+        } else {
+          result.textContent = `${matchLabel}, 낙첨`;
+        }
+
+        div.appendChild(result);
+        return div;
+      };
+
+      const pickUniqueNumbers = () => {
+        const pool = Array.from({ length: 45 }, (_, idx) => idx + 1);
+        const numbers = [];
+
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        while (numbers.length < 6) {
+          numbers.push(pool[numbers.length]);
+        }
+
+        return numbers.sort((a, b) => a - b);
+      };
+
+      const generateWinningSet = () => {
+        const numbers = pickUniqueNumbers();
+        let bonusNumber;
+        do {
+          bonusNumber = Math.floor(Math.random() * 45) + 1;
+        } while (numbers.includes(bonusNumber));
+        return { numbers, bonusNumber };
+      };
+
+      const determineRank = (matchCount, bonusMatched) => {
+        if (matchCount === 6) return 1;
+        if (matchCount === 5 && bonusMatched) return 2;
+        if (matchCount === 5) return 3;
+        if (matchCount === 4) return 4;
+        if (matchCount === 3) return 5;
+        return null;
+      };
+
+      const generateTickets = (gameCount) => {
+        const winningSet = new Set(settingsState.winningNumbers);
+        const bonusNumber = settingsState.bonusNumber;
+        return Array.from({ length: gameCount }).map(() => {
+          const numbers = pickUniqueNumbers();
+          const matchedNumbers = numbers.filter((num) => winningSet.has(num));
+          const bonusMatched = numbers.includes(bonusNumber);
+          const rank = determineRank(matchedNumbers.length, bonusMatched);
+          const prizeAmount = rank ? settingsState.prizeAmounts[rank] || 0 : 0;
+          return {
+            numbers,
+            matchedNumbers,
+            bonusMatched,
+            bonusNumber,
+            rank,
+            prizeAmount,
+          };
+        });
+      };
+
+      const renderTickets = (tickets) => {
+        results.innerHTML = '';
+        tickets.forEach((ticket) => {
+          const element = createTicketElement(
+            ticket.numbers,
+            ticket.matchedNumbers,
+            ticket.rank,
+            ticket.prizeAmount,
+            ticket.bonusMatched,
+            ticket.bonusNumber
+          );
+          results.appendChild(element);
+        });
+      };
+
+      const calculateTotalPrize = (tickets) =>
+        tickets.reduce((sum, ticket) => sum + (ticket.prizeAmount || 0), 0);
+
+      const summarizeTickets = (tickets) => {
+        const rankCounts = {};
+        const winningTickets = [];
+        tickets.forEach((ticket) => {
+          if (ticket.rank) {
+            rankCounts[ticket.rank] = (rankCounts[ticket.rank] || 0) + 1;
+            winningTickets.push({
+              numbers: ticket.numbers,
+              rank: ticket.rank,
+              prizeAmount: ticket.prizeAmount,
+            });
+          }
+        });
+        return { rankCounts, winningTickets };
+      };
+
+      const applyTicketsToState = (tickets, { renderResults = true } = {}) => {
+        updateStatsWithTickets(tickets);
+        renderStatistics();
+        if (renderResults) {
+          renderTickets(tickets);
+        }
+      };
+
+      const updateStatsWithTickets = (tickets) => {
+        tickets.forEach(({ numbers, rank }) => {
+          statsState.totalGames += 1;
+          statsState.totalNumbers += numbers.length;
+          numbers.forEach((num) => {
+            statsState.frequency[num] += 1;
+          });
+          if (rank) {
+            statsState.rankCounts[rank] += 1;
+          }
+        });
+      };
+
+      const buildStatsTable = (frequency, totalNumbers) => {
+        statsTableBody.innerHTML = '';
+        for (let num = 1; num <= 45; num += 1) {
+          const count = frequency[num];
+          const percentage = totalNumbers ? (count / totalNumbers) * 100 : 0;
+
+          const row = document.createElement('tr');
+
+          const numberCell = document.createElement('td');
+          numberCell.textContent = num.toString().padStart(2, '0');
+          row.appendChild(numberCell);
+
+          const countCell = document.createElement('td');
+          countCell.textContent = count;
+          row.appendChild(countCell);
+
+          const ratioCell = document.createElement('td');
+          ratioCell.textContent = `${percentage.toFixed(1)}%`;
+          row.appendChild(ratioCell);
+
+          statsTableBody.appendChild(row);
+        }
+      };
+
+      const buildDistributionChart = (frequency, maxCount) => {
+        distributionChart.innerHTML = '';
+
+        for (let num = 1; num <= 45; num += 1) {
+          const count = frequency[num];
+          const percentage = maxCount > 0 ? `${Math.round((count / maxCount) * 100)}%` : '0%';
+
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+
+          const label = document.createElement('span');
+          label.className = 'bar-label';
+          label.textContent = num.toString().padStart(2, '0');
+          bar.appendChild(label);
+
+          const track = document.createElement('div');
+          track.className = 'bar-track';
+
+          const fill = document.createElement('div');
+          fill.className = 'bar-fill';
+          fill.style.setProperty('--percentage', percentage);
+          track.appendChild(fill);
+          bar.appendChild(track);
+
+          const value = document.createElement('span');
+          value.className = 'bar-value';
+          value.textContent = count;
+          bar.appendChild(value);
+
+          distributionChart.appendChild(bar);
+        }
+      };
+
+      const renderRankStatistics = () => {
+        rankStatsTableBody.innerHTML = '';
+        const totalGames = statsState.totalGames;
+
+        Object.keys(prizeLabels).forEach((rankKey) => {
+          const rank = parseInt(rankKey, 10);
+          const row = document.createElement('tr');
+
+          const rankCell = document.createElement('td');
+          rankCell.textContent = prizeLabels[rank];
+          row.appendChild(rankCell);
+
+          const countCell = document.createElement('td');
+          const count = statsState.rankCounts[rank];
+          countCell.textContent = count.toLocaleString();
+          row.appendChild(countCell);
+
+          const prizeCell = document.createElement('td');
+          const prizeAmount = settingsState.prizeAmounts[rank] || 0;
+          prizeCell.textContent = formatCurrency(prizeAmount);
+          row.appendChild(prizeCell);
+
+          const totalPrizeCell = document.createElement('td');
+          const totalPrize = prizeAmount * count;
+          totalPrizeCell.textContent = formatCurrency(totalPrize);
+          row.appendChild(totalPrizeCell);
+
+          const theoreticalCell = document.createElement('td');
+          const theoreticalProbability = theoreticalProbabilities[rank] || 0;
+          theoreticalCell.textContent = formatPercentage(theoreticalProbability);
+          row.appendChild(theoreticalCell);
+
+          const actualCell = document.createElement('td');
+          const actualProbability = totalGames ? count / totalGames : 0;
+          actualCell.textContent = totalGames ? formatPercentage(actualProbability) : '-';
+          row.appendChild(actualCell);
+
+          rankStatsTableBody.appendChild(row);
+        });
+      };
+
+      const renderSummary = () => {
+        const totalGames = statsState.totalGames;
+        const totalCost = totalGames * TICKET_PRICE;
+        const totalPrize = Object.entries(statsState.rankCounts).reduce((sum, [rank, count]) => {
+          const prize = settingsState.prizeAmounts[rank] || 0;
+          return sum + prize * count;
+        }, 0);
+        const net = totalPrize - totalCost;
+
+        totalCostText.textContent = formatCurrency(totalCost);
+        totalPrizeText.textContent = formatCurrency(totalPrize);
+        netResultText.textContent = formatCurrency(net);
+
+        netResultText.classList.remove('positive', 'negative');
+        netStatusText.textContent = '손익 없음';
+        if (net > 0) {
+          netResultText.classList.add('positive');
+          netStatusText.textContent = '이익';
+        } else if (net < 0) {
+          netResultText.classList.add('negative');
+          netStatusText.textContent = '손실';
+        }
+      };
+
+      const renderStatistics = () => {
+        const { totalGames, totalNumbers, frequency } = statsState;
+
+        renderSummary();
+        renderRankStatistics();
+
+        if (!totalNumbers) {
+          statsSummary.textContent = '누적된 통계가 없습니다. 추첨을 실행해 주세요.';
+          statsTableBody.innerHTML = '';
+          distributionChart.innerHTML = '';
+          return;
+        }
+
+        const gamesText = totalGames.toLocaleString();
+        const numbersText = totalNumbers.toLocaleString();
+        statsSummary.textContent = `총 ${gamesText}게임, ${numbersText}개 번호에 대한 누적 통계입니다.`;
+
+        buildStatsTable(frequency, totalNumbers);
+        const maxCount = Math.max(...frequency.slice(1));
+        buildDistributionChart(frequency, maxCount);
+      };
+
+      const simulateDraw = (gameCount, { renderResults = true, mutateStats = true } = {}) => {
+        const tickets = generateTickets(gameCount);
+        if (mutateStats) {
+          applyTicketsToState(tickets, { renderResults });
+        } else if (renderResults) {
+          renderTickets(tickets);
+        }
+        return tickets;
+      };
+
+      const recordTransaction = async (userId, payload) => {
+        try {
+          await push(getTransactionsRef(userId), {
+            ...payload,
+            createdAt: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error('Failed to record transaction', error);
+        }
+      };
+
+      const persistDrawResult = async (tickets, totalCost, totalPrize, { suppressErrors = false } = {}) => {
+        if (!currentUser) {
+          return false;
+        }
+
+        const summary = summarizeTickets(tickets);
+        const net = totalPrize - totalCost;
+
+        if (currentUserIsAdmin) {
+          await recordTransaction(currentUser.uid, {
+            type: 'admin_draw',
+            gameCount: tickets.length,
+            cost: totalCost,
+            prize: totalPrize,
+            net,
+            rankCounts: summary.rankCounts,
+            winningTickets: summary.winningTickets,
+          });
+          return true;
+        }
+
+        try {
+          const userRef = getUserRef(currentUser.uid);
+          const timestamp = serverTimestamp();
+          let insufficientFunds = false;
+          let missingUser = false;
+          const result = await runTransaction(userRef, (data) => {
+            if (data === null) {
+              missingUser = true;
+              return undefined;
+            }
+            const balance = data.balance ?? INITIAL_BALANCE;
+            if (balance < totalCost) {
+              insufficientFunds = true;
+              return undefined;
+            }
+            return {
+              ...data,
+              balance: balance - totalCost + totalPrize,
+              totalSpent: (data.totalSpent || 0) + totalCost,
+              totalWon: (data.totalWon || 0) + totalPrize,
+              updatedAt: timestamp,
+              lastPlayedAt: timestamp,
+            };
+          });
+
+          if (!result.committed) {
+            if (insufficientFunds) {
+              if (!suppressErrors) {
+                alert('보유 금액이 부족합니다. 관리자에게 문의해주세요.');
+                setHint(authMessage, '보유 금액이 부족합니다. 관리자에게 문의해주세요.', 'error');
+              }
+              return false;
+            }
+            if (missingUser) {
+              throw new Error('USER_NOT_FOUND');
+            }
+            throw new Error('TRANSACTION_FAILED');
+          }
+
+          await recordTransaction(currentUser.uid, {
+            type: 'draw',
+            gameCount: tickets.length,
+            cost: totalCost,
+            prize: totalPrize,
+            net,
+            rankCounts: summary.rankCounts,
+            winningTickets: summary.winningTickets,
+          });
+          return true;
+        } catch (error) {
+          if (error && error.message === 'USER_NOT_FOUND') {
+            if (!suppressErrors) {
+              setHint(authMessage, '회원 정보를 찾을 수 없습니다. 다시 로그인해주세요.', 'error');
+            }
+            return false;
+          }
+
+          if (!suppressErrors) {
+            setHint(authMessage, '추첨 처리 중 오류가 발생했습니다. 잠시 후 다시 이용해주세요.', 'error');
+          }
+          if (error) {
+            console.error(error);
+          }
+          return false;
+        }
+      };
+
+      const ensureUserDocument = async (user) => {
+        if (!user) {
+          return;
+        }
+        const emailLower = normalizeEmail(user.email);
+        const isListedAdmin = ADMIN_EMAILS.includes(emailLower);
+        const userRef = getUserRef(user.uid);
+        const snapshot = await get(userRef);
+        if (!snapshot.exists()) {
+          const timestamp = serverTimestamp();
+          await set(userRef, {
+            email: user.email || '',
+            emailLower,
+            balance: INITIAL_BALANCE,
+            totalSpent: 0,
+            totalWon: 0,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+            isAdmin: isListedAdmin,
+          });
+          return;
+        }
+        const data = snapshot.val() || {};
+        const updates = {};
+        if (!data.email && user.email) {
+          updates.email = user.email;
+        }
+        if (!data.emailLower && emailLower) {
+          updates.emailLower = emailLower;
+        }
+        if (isListedAdmin && !data.isAdmin) {
+          updates.isAdmin = true;
+        }
+        if (Object.keys(updates).length) {
+          updates.updatedAt = serverTimestamp();
+          await update(userRef, updates);
+        }
+      };
+
+      const renderUserPanel = (user, data) => {
+        if (!user) {
+          userPanel.classList.add('hidden');
+          return;
+        }
+        userPanel.classList.remove('hidden');
+        userEmailText.textContent = user.email || '(이메일 없음)';
+        if (currentUserIsAdmin) {
+          userBalanceText.textContent = '무제한';
+        } else {
+          userBalanceText.textContent = formatCurrency((data && data.balance) || 0);
+        }
+        userSpentText.textContent = formatCurrency((data && data.totalSpent) || 0);
+        userWonText.textContent = formatCurrency((data && data.totalWon) || 0);
+        userRoleBadge.classList.toggle('hidden', !currentUserIsAdmin);
+        if (adminPageButton) {
+          adminPageButton.classList.toggle('hidden', !currentUserIsAdmin);
+        }
+        if (bottomNavAdminLink) {
+          bottomNavAdminLink.classList.toggle('hidden', !currentUserIsAdmin);
+        }
+      };
+
+      const translateAuthError = (error) => {
+        const code = error && error.code ? String(error.code) : '';
+        switch (code) {
+          case 'auth/email-already-in-use':
+            return '이미 가입된 이메일입니다. 로그인을 시도해주세요.';
+          case 'auth/invalid-email':
+            return '이메일 형식이 올바르지 않습니다.';
+          case 'auth/weak-password':
+            return '비밀번호는 최소 6자 이상이어야 합니다.';
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            return '이메일 또는 비밀번호가 올바르지 않습니다.';
+          case 'auth/too-many-requests':
+            return '잠시 후 다시 시도해주세요. 시도 횟수가 많습니다.';
+          default:
+            return '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 이용해주세요.';
+        }
+      };
+
+      const setAutoStatus = (message) => {
+        autoStatusText.textContent = message;
+      };
+
+      const updateAutoControls = () => {
+        const { running } = autoDrawState;
+        const disable = running || controlsLocked;
+        autoFirstButton.disabled = disable;
+        autoSecondButton.disabled = disable;
+        autoStopButton.disabled = !running;
+        drawButton.disabled = disable;
+        quickButtons.forEach((button) => {
+          button.disabled = disable;
+        });
+        applySettingsButton.disabled = disable;
+        randomizeWinningButton.disabled = disable;
+        gameCountInput.disabled = disable;
+      };
+
+      const stopAutoDraw = (message = '자동 추첨 대기 중') => {
+        const wasRunning = autoDrawState.running;
+        if (autoDrawState.timeoutId) {
+          clearTimeout(autoDrawState.timeoutId);
+          autoDrawState.timeoutId = null;
+        }
+        autoDrawState.running = false;
+        autoDrawState.targetRank = null;
+        updateAutoControls();
+        setAutoStatus(message);
+        if (wasRunning && message) {
+          results.textContent = message;
+        }
+      };
+
+      const startAutoDraw = (targetRank) => {
+        if (autoDrawState.running) {
+          stopAutoDraw();
+        }
+
+        const batchSize = sanitizeGameCount(parseInt(gameCountInput.value, 10));
+        gameCountInput.value = batchSize;
+
+        if (!validateSettings()) {
+          return;
+        }
+
+        if (!currentUserIsAdmin) {
+          if (!currentUser) {
+            setHint(authMessage, '로그인 후 이용해주세요.', 'error');
+            alert('로그인 후 이용해주세요.');
+            return;
+          }
+          if (!currentUserData) {
+            setHint(authMessage, '계정 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'error');
+            return;
+          }
+          const firstBatchCost = batchSize * TICKET_PRICE;
+          if ((currentUserData.balance || 0) < firstBatchCost) {
+            alert('잔액이 부족합니다. 배치 크기를 줄이거나 관리자에게 문의해주세요.');
+            return;
+          }
+        }
+
+        autoDrawState.running = true;
+        autoDrawState.targetRank = targetRank;
+        autoDrawState.batchSize = batchSize;
+        updateAutoControls();
+        setAutoStatus('자동 추첨 중...');
+        results.textContent = '자동 추첨 중...';
+
+        const checkMatch = (ticket) => {
+          if (targetRank === 1) {
+            return ticket.rank === 1;
+          }
+          if (targetRank === 2) {
+            return ticket.rank === 2 || ticket.rank === 1;
+          }
+          return false;
+        };
+
+        const runBatch = async () => {
+          if (!autoDrawState.running) {
+            return;
+          }
+
+          const batchCost = autoDrawState.batchSize * TICKET_PRICE;
+
+          if (!currentUserIsAdmin) {
+            const available = (currentUserData && currentUserData.balance) || 0;
+            if (available < batchCost) {
+              stopAutoDraw('잔액이 부족하여 자동 추첨이 종료되었습니다.');
+              return;
+            }
+          }
+
+          const tickets = generateTickets(autoDrawState.batchSize);
+          const totalPrize = calculateTotalPrize(tickets);
+          const success = await persistDrawResult(tickets, batchCost, totalPrize, { suppressErrors: true });
+          if (!success) {
+            stopAutoDraw('잔액 부족 또는 오류로 자동 추첨이 중지되었습니다.');
+            return;
+          }
+
+          applyTicketsToState(tickets, { renderResults: false });
+
+          if (!autoDrawState.running) {
+            return;
+          }
+
+          const matched = tickets.find(checkMatch);
+
+          if (matched) {
+            stopAutoDraw(matched.rank === 1 ? '1등 당첨 발견! 자동 추첨 완료' : '2등 당첨 발견! 자동 추첨 완료');
+            renderTickets(tickets);
+            return;
+          }
+
+          setAutoStatus(`자동 추첨 중... 총 ${statsState.totalGames.toLocaleString()}게임`);
+          autoDrawState.timeoutId = setTimeout(() => {
+            void runBatch();
+          }, 0);
+        };
+
+        void runBatch();
+      };
+
+      const resetStatistics = () => {
+        stopAutoDraw();
+        statsState.totalGames = 0;
+        statsState.totalNumbers = 0;
+        statsState.frequency.fill(0);
+        Object.keys(statsState.rankCounts).forEach((rank) => {
+          statsState.rankCounts[rank] = 0;
+        });
+        results.innerHTML = '<p class="hint">추첨 결과가 여기에 표시됩니다.</p>';
+        renderStatistics();
+      };
+
+      const draw = async (overrideCount) => {
+        if (autoDrawState.running) {
+          stopAutoDraw();
+        }
+
+        const parsed = overrideCount ?? parseInt(gameCountInput.value, 10);
+        const gameCount = sanitizeGameCount(Number.isNaN(parsed) ? 1 : parsed);
+        gameCountInput.value = gameCount;
+
+        if (!validateSettings()) {
+          return;
+        }
+
+        if (!currentUserIsAdmin) {
+          if (!currentUser) {
+            setHint(authMessage, '로그인 후 이용해주세요.', 'error');
+            alert('로그인 후 이용해주세요.');
+            return;
+          }
+          if (!currentUserData) {
+            setHint(authMessage, '계정 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'error');
+            return;
+          }
+        }
+
+        const totalCost = gameCount * TICKET_PRICE;
+        if (!currentUserIsAdmin) {
+          const balance = (currentUserData && currentUserData.balance) || 0;
+          if (balance < totalCost) {
+            alert('잔액이 부족합니다. 관리자에게 문의해주세요.');
+            return;
+          }
+        }
+
+        await withControlsLocked(async () => {
+          const tickets = generateTickets(gameCount);
+          const totalPrize = calculateTotalPrize(tickets);
+          const success = await persistDrawResult(tickets, totalCost, totalPrize);
+          if (!success) {
+            return;
+          }
+          setHint(authMessage, '');
+          applyTicketsToState(tickets, { renderResults: true });
+        });
+      };
+
+      if (signUpForm) {
+        signUpForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signUpEmailInput?.value || '').trim();
+          const password = (signUpPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '회원가입이 완료되었습니다. 자동으로 로그인됩니다.', 'success');
+            signUpForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, translateAuthError(error), 'error');
+          }
+        });
+      }
+
+      if (signInForm) {
+        signInForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const email = (signInEmailInput?.value || '').trim();
+          const password = (signInPasswordInput?.value || '').trim();
+          if (!email || !password) {
+            setHint(authMessage, '이메일과 비밀번호를 입력해주세요.', 'error');
+            return;
+          }
+          try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setHint(authMessage, '로그인에 성공했습니다.', 'success');
+            signInForm.reset();
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, translateAuthError(error), 'error');
+          }
+        });
+      }
+
+      if (signOutButton) {
+        signOutButton.addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            setHint(authMessage, '로그아웃 되었습니다.', 'success');
+          } catch (error) {
+            console.error(error);
+            setHint(authMessage, '로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+          }
+        });
+      }
+
+      if (chatForm) {
+        chatForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (!currentUser) {
+            setHint(chatStatus, '로그인 후 채팅을 사용할 수 있습니다.', 'error');
+            return;
+          }
+          const textValue = chatInput?.value || '';
+          const trimmed = textValue.trim();
+          if (!trimmed) {
+            return;
+          }
+          if (chatInput) {
+            chatInput.value = '';
+          }
+          const sanitized = trimmed.slice(0, 500);
+          try {
+            await push(ref(db, CHAT_MESSAGES_COLLECTION), {
+              userId: currentUser.uid,
+              email: currentUser.email || '',
+              text: sanitized,
+              createdAt: serverTimestamp(),
+              createdAtMs: Date.now(),
+            });
+            setHint(chatStatus, '');
+          } catch (error) {
+            console.error(error);
+            setHint(chatStatus, '메시지 전송에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+            if (chatInput) {
+              chatInput.value = sanitized;
+              chatInput.focus();
+            }
+          }
+        });
+      }
+
+      if (grantSearchInput) {
+        grantSearchInput.addEventListener('input', () => {
+          renderUserOptions();
+        });
+      }
+
+      if (grantUserSelect) {
+        grantUserSelect.addEventListener('change', () => {
+          const selected = grantUserSelect.selectedOptions[0];
+          if (selected && grantEmailInput) {
+            grantEmailInput.value = selected.dataset.email || selected.dataset.emailLower || selected.value || '';
+          }
+        });
+      }
+
+      if (refreshUsersButton) {
+        refreshUsersButton.addEventListener('click', () => {
+          if (!currentUserIsAdmin) {
+            setHint(adminMessage, '관리자만 사용자 목록을 볼 수 있습니다.', 'error');
+            return;
+          }
+          renderUserOptions();
+          setHint(adminMessage, '사용자 목록을 새로 고쳤습니다.', 'success');
+        });
+      }
+
+      if (grantForm) {
+        grantForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          if (!currentUserIsAdmin) {
+            setHint(adminMessage, '관리자만 사용할 수 있는 기능입니다.', 'error');
+            return;
+          }
+
+          const selectedOption = grantUserSelect?.selectedOptions?.[0] || null;
+          let targetUserId = selectedOption && selectedOption.value ? selectedOption.value : '';
+          let targetEmail = normalizeEmail(
+            grantEmailInput?.value || selectedOption?.dataset.email || selectedOption?.dataset.emailLower || ''
+          );
+
+          if (!targetEmail && targetUserId) {
+            const cached = allUsersCache.find((user) => user.uid === targetUserId);
+            if (cached) {
+              targetEmail = cached.emailLower;
+            }
+          }
+
+          if (!targetEmail) {
+            setHint(adminMessage, '이메일을 입력하거나 사용자 목록에서 선택해주세요.', 'error');
+            grantEmailInput?.focus();
+            return;
+          }
+
+          const rawAmount = grantAmountInput?.value ?? '';
+          const sanitizedAmount = Number(String(rawAmount).replace(/[^0-9.-]/g, ''));
+          if (!Number.isFinite(sanitizedAmount) || sanitizedAmount <= 0) {
+            setHint(adminMessage, '지급 금액은 0보다 큰 숫자로 입력해주세요.', 'error');
+            grantAmountInput?.focus();
+            return;
+          }
+
+          const amount = Math.floor(sanitizedAmount);
+          if (amount <= 0) {
+            setHint(adminMessage, '지급 금액은 0보다 큰 숫자로 입력해주세요.', 'error');
+            grantAmountInput?.focus();
+            return;
+          }
+
+          let targetUser = allUsersCache.find((user) => user.uid === targetUserId) ||
+            allUsersCache.find((user) => user.emailLower === targetEmail) ||
+            null;
+
+          let userRefToUpdate = targetUser ? getUserRef(targetUser.uid) : null;
+
+          try {
+            if (!userRefToUpdate) {
+              const targetQuery = query(
+                ref(db, USERS_COLLECTION),
+                orderByChild('emailLower'),
+                equalTo(targetEmail),
+                limitToFirst(1)
+              );
+              const snapshot = await get(targetQuery);
+              if (!snapshot.exists()) {
+                setHint(adminMessage, '해당 이메일을 가진 사용자를 찾을 수 없습니다.', 'error');
+                return;
+              }
+
+              snapshot.forEach((child) => {
+                if (!userRefToUpdate) {
+                  targetUserId = child.key;
+                  userRefToUpdate = child.ref;
+                  const data = child.val() || {};
+                  targetUser = {
+                    uid: targetUserId,
+                    email: data.email || '',
+                    emailLower: normalizeEmail(data.emailLower || data.email || targetEmail),
+                    balance: typeof data.balance === 'number' ? data.balance : Number(data.balance) || 0,
+                    isAdmin: Boolean(data.isAdmin),
+                  };
+                }
+              });
+            } else {
+              targetUserId = targetUser.uid;
+            }
+
+            if (!userRefToUpdate || !targetUserId) {
+              setHint(adminMessage, '해당 이메일을 가진 사용자를 찾을 수 없습니다.', 'error');
+              return;
+            }
+
+            const timestamp = serverTimestamp();
+            const result = await runTransaction(userRefToUpdate, (data) => {
+              if (data === null) {
+                return undefined;
+              }
+              const currentBalance = typeof data.balance === 'number' ? data.balance : Number(data.balance) || 0;
+              return {
+                ...data,
+                balance: currentBalance + amount,
+                updatedAt: timestamp,
+              };
+            });
+
+            if (!result.committed) {
+              setHint(adminMessage, '금액 지급 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
+              return;
+            }
+
+            await recordTransaction(targetUserId, {
+              type: 'grant',
+              amount,
+              grantedBy: currentUser?.uid || '',
+              grantedByEmail: currentUser?.email || '',
+              grantedToEmail: targetUser?.email || targetEmail,
+            });
+
+            const finalEmail = targetUser?.email || grantEmailInput?.value || '';
+            setHint(adminMessage, '금액을 지급했습니다.', 'success');
+            grantForm.reset();
+            if (grantEmailInput) {
+              grantEmailInput.value = finalEmail;
+            }
+            if (grantUserSelect && targetUserId) {
+              grantUserSelect.value = targetUserId;
+            }
+            renderUserOptions();
+          } catch (error) {
+            console.error(error);
+            setHint(adminMessage, '금액 지급 중 오류가 발생했습니다.', 'error');
+          }
+        });
+      }
+
+      resetStatsButton.addEventListener('click', resetStatistics);
+      applySettingsButton.addEventListener('click', applySettings);
+      randomizeWinningButton.addEventListener('click', () => {
+        if (autoDrawState.running) {
+          stopAutoDraw();
+        }
+        const { numbers, bonusNumber } = generateWinningSet();
+        settingsState.winningNumbers = numbers;
+        settingsState.bonusNumber = bonusNumber;
+        winningNumberInputs.forEach((input, index) => {
+          input.value = numbers[index];
+        });
+        bonusNumberInput.value = bonusNumber;
+        renderStatistics();
+      });
+      drawButton.addEventListener('click', () => { void draw(); });
+      const bottomNavDrawButton = document.getElementById('bottomNavDrawButton');
+      const bottomNavPurchaseLink = document.getElementById('bottomNavPurchaseLink');
+      const bottomNavAdminLink = document.getElementById('bottomNavAdminLink');
+      const bottomNav = document.getElementById('bottomNav');
+
+      if (bottomNavDrawButton) {
+        bottomNavDrawButton.addEventListener('click', () => {
+          void draw();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+
+      quickButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const games = parseInt(button.dataset.games, 10);
+          gameCountInput.value = games;
+          void draw(games);
+        });
+      });
+      autoFirstButton.addEventListener('click', () => startAutoDraw(1));
+      autoSecondButton.addEventListener('click', () => startAutoDraw(2));
+      autoStopButton.addEventListener('click', () => stopAutoDraw('자동 추첨이 중지되었습니다.'));
+      gameCountInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          void draw();
+        }
+      });
+
+      onAuthStateChanged(auth, async (user) => {
+        if (unsubscribeUserDoc) {
+          unsubscribeUserDoc();
+          unsubscribeUserDoc = null;
+        }
+
+        currentUser = user || null;
+        currentUserData = null;
+        currentUserIsAdmin = false;
+
+        resetStatistics();
+        setControlsLocked(true);
+
+        if (!user) {
+          authSection.classList.remove('hidden');
+          appSection.classList.add('hidden');
+          adminSection.classList.add('hidden');
+          userPanel.classList.add('hidden');
+          if (communitySection) {
+            communitySection.classList.add('hidden');
+          }
+          await stopPresenceTracking();
+          stopPresenceListener();
+          stopUsersListener();
+          stopChatListener();
+          setChatAvailability(false);
+          if (chatStatus) {
+            chatStatus.textContent = '로그인 후 채팅을 사용할 수 있습니다.';
+            chatStatus.classList.remove('error');
+          }
+          setHint(authMessage, '로그인 또는 회원가입 후 이용해주세요.');
+          return;
+        }
+
+        setHint(authMessage, '');
+        authSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+
+        try {
+          await ensureUserDocument(user);
+        } catch (error) {
+          console.error(error);
+          setHint(authMessage, '계정 초기화 중 오류가 발생했습니다.', 'error');
+        }
+
+        const userRef = getUserRef(user.uid);
+        unsubscribeUserDoc = onValue(
+          userRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              setControlsLocked(true);
+              return;
+            }
+            const data = snapshot.val() || {};
+            currentUserData = data;
+            currentUserIsAdmin = Boolean(data.isAdmin);
+            renderUserPanel(user, data);
+            if (currentUserIsAdmin) {
+              adminSection.classList.remove('hidden');
+              setHint(adminMessage, '');
+              startUsersListener();
+            } else {
+              adminSection.classList.add('hidden');
+              setHint(adminMessage, '');
+              stopUsersListener();
+            }
+            startPresenceTracking(user, data).catch((error) => {
+              console.error('Failed to update presence', error);
+            });
+            startPresenceListener();
+            if (communitySection) {
+              communitySection.classList.remove('hidden');
+            }
+            setChatAvailability(true);
+            if (chatStatus) {
+              chatStatus.textContent = '매너 채팅을 지켜주세요.';
+              chatStatus.classList.remove('error');
+            }
+            startChatListener();
+            renderUserOptions();
+            setControlsLocked(false);
+          },
+          (error) => {
+            console.error(error);
+            setControlsLocked(true);
+            setHint(authMessage, '계정 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+          }
+        );
+      });
+
+      setupWinningNumberInputs();
+      setupPrizeInputs();
+      updateAutoControls();
+      resetStatistics();
+      setChatAvailability(false);
+      if (chatStatus) {
+        chatStatus.textContent = '로그인 후 채팅을 사용할 수 있습니다.';
+        chatStatus.classList.remove('error');
+      }
+      setHint(authMessage, '로그인 또는 회원가입 후 이용해주세요.');
+    </script>
+  </body>
+</html>
