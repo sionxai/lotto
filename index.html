@@ -458,6 +458,45 @@
         margin: 24px 0;
       }
 
+      .global-stats-card {
+        margin-top: 28px;
+        border: 1px solid #e8e2ff;
+        border-radius: 12px;
+        padding: 22px;
+        background: #f9f7ff;
+        text-align: left;
+      }
+
+      .global-stats-card h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        color: #4a3a99;
+      }
+
+      .global-stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+
+      .global-stats-table th,
+      .global-stats-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e8e2ff;
+        text-align: left;
+      }
+
+      .global-stats-table th {
+        background: #f1edff;
+        color: #5543b5;
+      }
+
+      .global-stats-table tr:last-child td {
+        font-weight: 600;
+        color: #3d2fa8;
+      }
+
       @media (min-width: 720px) {
         .card-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -890,6 +929,19 @@
           <p id="chatStatus" class="hint"></p>
         </div>
       </section>
+      <section id="globalStatsSection" class="global-stats-card">
+        <h2>전체 사용자 당첨 누적</h2>
+        <p id="globalStatsHint" class="hint">누적된 당첨 기록이 없습니다.</p>
+        <table id="globalStatsTable" class="global-stats-table hidden">
+          <thead>
+            <tr>
+              <th>등수</th>
+              <th>누적 당첨수</th>
+            </tr>
+          </thead>
+          <tbody id="globalStatsTableBody"></tbody>
+        </table>
+      </section>
       <section id="adminSection" class="admin-section hidden">
         <h2>관리자 도구</h2>
         <p class="hint">관리자는 금액 제한 없이 추첨할 수 있으며, 아래 사용자 목록에서 선택하거나 이메일을 입력해 금액을 지급할 수 있습니다.</p>
@@ -1094,6 +1146,7 @@
       const ADMIN_EMAILS = ["admin@admin.com"];
       const USERS_COLLECTION = "users";
       const TRANSACTIONS_SUBCOLLECTION = "transactions";
+      const GLOBAL_STATS_PATH = "stats/globalRankCounts";
       const PRESENCE_COLLECTION = "presence";
       const CHAT_MESSAGES_COLLECTION = "chat/messages";
       const CHAT_MESSAGE_LIMIT = 50;
@@ -1120,6 +1173,10 @@
       const refreshUsersButton = document.getElementById('refreshUsersButton');
       const adminSection = document.getElementById('adminSection');
       const adminMessage = document.getElementById('adminMessage');
+      const globalStatsSection = document.getElementById('globalStatsSection');
+      const globalStatsTable = document.getElementById('globalStatsTable');
+      const globalStatsTableBody = document.getElementById('globalStatsTableBody');
+      const globalStatsHint = document.getElementById('globalStatsHint');
       const signUpEmailInput = document.getElementById('signUpEmail');
       const signUpPasswordInput = document.getElementById('signUpPassword');
       const signInEmailInput = document.getElementById('signInEmail');
@@ -1607,6 +1664,95 @@
           }
           await sendChatSystemMessage(`${displayName}이 ${label}에 당첨되었습니다!`);
         }
+      };
+
+      const updateGlobalRankStats = async (tickets) => {
+        const increments = {};
+        tickets.forEach((ticket) => {
+          if (!ticket.rank || ticket.rank > 5) {
+            return;
+          }
+          increments[ticket.rank] = (increments[ticket.rank] || 0) + 1;
+        });
+        if (!Object.keys(increments).length) {
+          return;
+        }
+        const statsRef = ref(db, GLOBAL_STATS_PATH);
+        try {
+          await runTransaction(statsRef, (data) => {
+            const current = data && typeof data === 'object' ? data : {};
+            const next = { ...current };
+            Object.entries(increments).forEach(([rank, count]) => {
+              const previous = Number(next[rank]) || 0;
+              next[rank] = previous + count;
+            });
+            next.updatedAt = serverTimestamp();
+            return next;
+          });
+        } catch (error) {
+          console.error('Failed to update global rank stats', error);
+        }
+      };
+
+      const renderGlobalStats = (counts) => {
+        const ranks = [1, 2, 3, 4, 5];
+        globalStatsTableBody.innerHTML = '';
+        let total = 0;
+        ranks.forEach((rank) => {
+          const count = Number(counts && counts[rank]) || 0;
+          total += count;
+          const row = document.createElement('tr');
+          const rankCell = document.createElement('td');
+          rankCell.textContent = prizeLabels[rank] || `${rank}등`;
+          row.appendChild(rankCell);
+          const countCell = document.createElement('td');
+          countCell.textContent = count.toLocaleString();
+          row.appendChild(countCell);
+          globalStatsTableBody.appendChild(row);
+        });
+        const totalRow = document.createElement('tr');
+        const totalLabelCell = document.createElement('td');
+        totalLabelCell.textContent = '합계';
+        totalRow.appendChild(totalLabelCell);
+        const totalValueCell = document.createElement('td');
+        totalValueCell.textContent = total.toLocaleString();
+        totalRow.appendChild(totalValueCell);
+        globalStatsTableBody.appendChild(totalRow);
+        if (globalStatsTable) {
+          globalStatsTable.classList.remove('hidden');
+        }
+        if (globalStatsHint) {
+          globalStatsHint.classList.add('hidden');
+        }
+      };
+
+      const startGlobalStatsListener = () => {
+        const statsRef = ref(db, GLOBAL_STATS_PATH);
+        onValue(
+          statsRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              if (globalStatsTable) {
+                globalStatsTable.classList.add('hidden');
+              }
+              if (globalStatsHint) {
+                globalStatsHint.textContent = '누적된 당첨 기록이 없습니다.';
+                globalStatsHint.classList.remove('hidden');
+              }
+              globalStatsTableBody.innerHTML = '';
+              return;
+            }
+            const data = snapshot.val() || {};
+            renderGlobalStats(data);
+          },
+          (error) => {
+            console.error('Failed to listen global stats', error);
+            if (globalStatsHint) {
+              globalStatsHint.textContent = '전체 통계를 불러오지 못했습니다.';
+              globalStatsHint.classList.remove('hidden');
+            }
+          }
+        );
       };
 
       const autoDrawState = {
@@ -2416,6 +2562,7 @@
 
           applyTicketsToState(tickets, { renderResults: false });
           await announceWinningTickets(tickets);
+          await updateGlobalRankStats(tickets);
 
           if (!autoDrawState.running) {
             return;
@@ -2494,6 +2641,7 @@
           setHint(authMessage, '');
           applyTicketsToState(tickets, { renderResults: true });
           await announceWinningTickets(tickets);
+          await updateGlobalRankStats(tickets);
         });
       };
 
@@ -2875,6 +3023,7 @@
         );
       });
 
+      startGlobalStatsListener();
       setupWinningNumberInputs();
       setupPrizeInputs();
       updateAutoControls();
